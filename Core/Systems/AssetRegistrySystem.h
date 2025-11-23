@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <unordered_map>
 
-#include "AssetId.hpp"
+#include "../Assets/AssetId.hpp"
 #include "CoreSystem.hpp"
 
 namespace sf
@@ -28,7 +28,7 @@ namespace Core
 
     private:
         template <typename T>
-        std::unordered_map<AssetId, std::shared_ptr<T>>* GetAssetMap() const;
+        std::unordered_map<AssetId, std::shared_ptr<T>>* GetAssetMap();
 
         std::unordered_map<AssetId, std::shared_ptr<sf::Texture>> AssetToTexture;
         std::unordered_map<AssetId, std::shared_ptr<sf::Font>> AssetToFont;
@@ -57,7 +57,7 @@ namespace Core
     }
 
     template <typename T>
-    std::unordered_map<AssetId, std::shared_ptr<T>>* AssetRegistrySystem::GetAssetMap() const
+    std::unordered_map<AssetId, std::shared_ptr<T>>* AssetRegistrySystem::GetAssetMap()
     {
         if constexpr (std::is_same_v<T, sf::Texture>)
         {

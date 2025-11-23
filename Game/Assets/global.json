@@ -1,0 +1,9 @@
+﻿{
+  "fonts": [
+    {
+      "id": "primary",
+      "path": "Game/Assets/Fonts/BlockCraft.otf",
+      "size": 16
+    }
+  ]
+}

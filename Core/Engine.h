@@ -16,6 +16,7 @@ namespace Core
             requires IsScene<T>
         void SetInitialScene();
 
+        void LoadGlobalAssets();
         void Run();
 
     private:
