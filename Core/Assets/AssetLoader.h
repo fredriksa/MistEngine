@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../Async/Task.hpp"
+#include "AssetId.hpp"
 
 namespace Core
 {
@@ -21,9 +22,8 @@ namespace Core
 
         void Clear();
 
-        Task LoadAllAsync();
+        Task<std::vector<AssetId>> LoadAllAsync();
 
-        // Between 0.0 - 1.0
         float GetProgress() const;
         int GetCompletedCount() const { return CompletedCount; }
 

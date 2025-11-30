@@ -35,7 +35,7 @@ namespace Core
         QueuedRequests.clear();
     }
 
-    Task AssetLoader::LoadAllAsync()
+    Task<std::vector<AssetId>> AssetLoader::LoadAllAsync()
     {
         TotalCount = static_cast<int>(QueuedRequests.size());
         CompletedCount = 0;
@@ -59,31 +59,43 @@ namespace Core
             Results.push_back(co_await Future);
         }
 
+        std::vector<AssetId> LoadedIds;
         for (const LoadedAsset& Result : Results)
         {
             if (Result.Success)
             {
+                AssetId Id;
                 switch (Result.Type)
                 {
                 case AssetType::Texture:
-                    AssetRegistry->Store<sf::Texture>(std::static_pointer_cast<sf::Texture>(Result.Data));
+                    Id = AssetRegistry->Store<sf::Texture>(
+                        std::static_pointer_cast<sf::Texture>(Result.Data),
+                        Result.Path
+                    );
                     break;
                 case AssetType::Font:
-                    AssetRegistry->Store<sf::Font>(std::static_pointer_cast<sf::Font>(Result.Data));
+                    Id = AssetRegistry->Store<sf::Font>(
+                        std::static_pointer_cast<sf::Font>(Result.Data),
+                        Result.Path
+                    );
                     break;
                 case AssetType::Sound:
-                    AssetRegistry->Store<sf::Sound>(std::static_pointer_cast<sf::Sound>(Result.Data));
+                    Id = AssetRegistry->Store<sf::SoundBuffer>(
+                        std::static_pointer_cast<sf::SoundBuffer>(Result.Data),
+                        Result.Path
+                    );
                     break;
                 }
+                LoadedIds.push_back(Id);
             }
             else
             {
-                std::printf("Could not load asset with path: %s", Result.Path.c_str());
+                std::printf("Could not load asset with path: %s\n", Result.Path.c_str());
             }
         }
 
         QueuedRequests.clear();
-        co_return;
+        co_return LoadedIds;
     }
 
     float AssetLoader::GetProgress() const
@@ -124,7 +136,7 @@ namespace Core
             case AssetType::Font:
                 {
                     auto font = std::make_shared<sf::Font>();
-                    if (font->openFromFile(Request.Path)) // Note: openFromFile, not loadFromFile
+                    if (font->openFromFile(Request.Path))
                     {
                         result.Data = font;
                         result.Success = true;

@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 namespace Core
 {
-    AssetManifest AssetManifest::LoadFromFile(const std::string& path)
+    AssetManifest AssetManifest::LoadFromFile(const std::string& path, const std::string& basePath)
     {
         AssetManifest Manifest;
 
@@ -30,7 +30,7 @@ namespace Core
                 {
                     AssetEntry Entry;
                     Entry.Id = FontJson.value("id", "");
-                    Entry.Path = FontJson.value("path", "");
+                    Entry.Path = basePath + FontJson.value("path", "");
                     Entry.Size = FontJson.value("size", 16);
 
                     if (!Entry.Path.empty())
@@ -46,7 +46,7 @@ namespace Core
                 {
                     AssetEntry Entry;
                     Entry.Id = TextureJson.value("id", "");
-                    Entry.Path = TextureJson.value("path", "");
+                    Entry.Path = basePath + TextureJson.value("path", "");
 
                     if (!Entry.Path.empty())
                     {
@@ -61,7 +61,7 @@ namespace Core
                 {
                     AssetEntry Entry;
                     Entry.Id = SoundJson.value("id", "");
-                    Entry.Path = SoundJson.value("path", "");
+                    Entry.Path = basePath + SoundJson.value("path", "");
 
                     if (!Entry.Path.empty())
                     {

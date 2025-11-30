@@ -9,34 +9,32 @@ namespace Core
 
     bool SceneManagerSystem::Pop()
     {
-        bool bDidPop = false;
-        if (!Scenes.empty())
+        if (Scenes.empty())
         {
-            Scenes.pop();
-            bDidPop = true;
+            return false;
         }
 
-        if (bDidPop)
+        if (ActiveScene)
         {
-            if (Scenes.empty())
-            {
-                ActiveScene.reset();
-            }
-            else
-            {
-                ActiveScene = Scenes.top();
-            }
+            ActiveScene->Exit();
         }
 
-        return bDidPop;
+        Scenes.pop();
+
+        if (Scenes.empty())
+        {
+            ActiveScene.reset();
+        }
+        else
+        {
+            ActiveScene = Scenes.top();
+        }
+
+        return true;
     }
 
     void SceneManagerSystem::Start()
     {
-        if (ActiveScene)
-        {
-            ActiveScene->Load();
-        }
     }
 
     void SceneManagerSystem::Tick(float DeltaTimeS)

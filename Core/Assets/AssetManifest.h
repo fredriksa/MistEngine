@@ -18,6 +18,6 @@ namespace Core
         std::vector<AssetEntry> Textures;
         std::vector<AssetEntry> Sounds;
 
-        static AssetManifest LoadFromFile(const std::string& path);
+        static AssetManifest LoadFromFile(const std::string& path, const std::string& basePath = "");
     };
 }

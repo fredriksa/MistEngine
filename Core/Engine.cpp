@@ -32,11 +32,13 @@ namespace Core
         const std::string GlobalAssetPath = "Game/Assets/global.json";
         if (!std::filesystem::exists(GlobalAssetPath))
         {
-            std::printf("Could not load global assets with path: %s", GlobalAssetPath.c_str());
+            std::printf("Could not load global assets with path: %s\n", GlobalAssetPath.c_str());
+            return;
         }
 
         AssetLoader Loader(SystemsRegistry->GetCoreSystem<AssetRegistrySystem>());
         const AssetManifest Manifest = AssetManifest::LoadFromFile(GlobalAssetPath);
+
         for (const AssetEntry& TextureAssetEntry : Manifest.Textures)
         {
             Loader.QueueTexture(TextureAssetEntry.Path);
@@ -44,7 +46,7 @@ namespace Core
 
         for (const AssetEntry& FontAssetEntry : Manifest.Fonts)
         {
-            Loader.QueueFont(FontAssetEntry.Path);
+            Loader.QueueFont(FontAssetEntry.Path, FontAssetEntry.Size);
         }
 
         for (const AssetEntry& SoundAssetEntry : Manifest.Sounds)
@@ -52,13 +54,13 @@ namespace Core
             Loader.QueueSound(SoundAssetEntry.Path);
         }
 
-        Task LoadTask = Loader.LoadAllAsync();
+        Task<std::vector<AssetId>> LoadTask = Loader.LoadAllAsync();
         while (!LoadTask.await_ready())
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
 
-        std::printf("Loaded %d global assets", Loader.GetCompletedCount());
+        std::printf("Loaded %d global assets\n", Loader.GetCompletedCount());
     }
 
     void Engine::Run()

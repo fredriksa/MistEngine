@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <stack>
+#include <thread>
+#include <chrono>
 
 #include "CoreSystem.hpp"
 #include "../Scene.h"
@@ -32,7 +34,16 @@ namespace Core
     template <typename T> requires IsScene<T>
     void SceneManagerSystem::Push()
     {
-        Scenes.push(std::make_shared<T>(GetContext()));
+        auto NewScene = std::make_shared<T>(GetContext());
+        Scenes.push(NewScene);
         ActiveScene = Scenes.top();
+
+        Task<> LoadTask = NewScene->Load();
+        while (!LoadTask.await_ready())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        NewScene->Enter();
     }
 }

@@ -19,9 +19,10 @@ namespace Core
 
         void await_suspend(std::coroutine_handle<> Handle)
         {
-            std::thread([this, Handle]() mutable
+            auto* futurePtr = &Future;
+            std::thread([futurePtr, Handle]() mutable
             {
-                Future.wait();
+                futurePtr->wait();
                 Handle.resume();
             }).detach();
         }
@@ -45,9 +46,10 @@ namespace Core
 
         void await_suspend(std::coroutine_handle<> Handle)
         {
-            std::thread([this, Handle]() mutable
+            auto* futurePtr = &Future;
+            std::thread([futurePtr, Handle]() mutable
             {
-                Future.wait();
+                futurePtr->wait();
                 Handle.resume();
             }).detach();
         }

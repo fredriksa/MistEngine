@@ -1,12 +1,22 @@
 ﻿#include "Scene.h"
 
+#include <cstdio>
+#include <algorithm>
+
 #include "Engine.h"
+#include "Systems/AssetRegistrySystem.h"
+#include "Assets/AssetManifest.h"
+#include "Assets/AssetLoader.h"
 
 namespace Core
 {
     Scene::Scene(std::shared_ptr<EngineContext> Context, std::string Name)
         : Name(std::move(Name))
           , Context(std::move(Context))
+    {
+    }
+
+    Scene::~Scene()
     {
     }
 
@@ -20,8 +30,60 @@ namespace Core
         World.Render();
     }
 
-    void Scene::Load()
+    Task<> Scene::Load()
     {
+        std::printf("Scene '%s' loading...\n", Name.c_str());
+
+        auto AssetRegistry = Context->SystemsRegistry->GetCoreSystem<AssetRegistrySystem>();
+        Loader = std::make_unique<AssetLoader>(AssetRegistry);
+
+        std::string NameLower = Name;
+        std::transform(NameLower.begin(), NameLower.end(), NameLower.begin(), ::tolower);
+        std::string ManifestPath = "Game/Assets/Scenes/" + NameLower + ".json";
+
+        auto Manifest = AssetManifest::LoadFromFile(ManifestPath, "Game/Assets/Scenes/");
+
+        for (const auto& TextureEntry : Manifest.Textures)
+        {
+            Loader->QueueTexture(TextureEntry.Path);
+        }
+        for (const auto& FontEntry : Manifest.Fonts)
+        {
+            Loader->QueueFont(FontEntry.Path, FontEntry.Size);
+        }
+        for (const auto& SoundEntry : Manifest.Sounds)
+        {
+            Loader->QueueSound(SoundEntry.Path);
+        }
+
+        LoadedAssets = co_await Loader->LoadAllAsync();
+
+        std::printf("Scene '%s' loaded %zu assets\n", Name.c_str(), LoadedAssets.size());
+
         OnLoad();
+        co_return;
+    }
+
+    void Scene::Enter()
+    {
+        std::printf("Scene '%s' entering...\n", Name.c_str());
+        OnEnter();
+    }
+
+    void Scene::Exit()
+    {
+        std::printf("Scene '%s' exiting...\n", Name.c_str());
+
+        OnExit();
+
+        auto AssetRegistry = Context->SystemsRegistry->GetCoreSystem<AssetRegistrySystem>();
+        for (AssetId Id : LoadedAssets)
+        {
+            AssetRegistry->Release(Id);
+        }
+
+        LoadedAssets.clear();
+
+        std::printf("Scene '%s' exited and released assets\n", Name.c_str());
     }
 }
