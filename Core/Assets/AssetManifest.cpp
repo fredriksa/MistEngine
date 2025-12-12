@@ -22,11 +22,12 @@ namespace Core
 
         try
         {
-            json J = json::parse(File);
+            json Data = json::parse(File);
 
-            if (J.contains("fonts"))
+            constexpr const char* FontsKey = "fonts";
+            if (Data.contains(FontsKey))
             {
-                for (const auto& FontJson : J["fonts"])
+                for (const auto& FontJson : Data[FontsKey])
                 {
                     AssetEntry Entry;
                     Entry.Id = FontJson.value("id", "");
@@ -40,9 +41,10 @@ namespace Core
                 }
             }
 
-            if (J.contains("textures"))
+            constexpr const char* TexturesKey = "textures";
+            if (Data.contains(TexturesKey))
             {
-                for (const auto& TextureJson : J["textures"])
+                for (const auto& TextureJson : Data[TexturesKey])
                 {
                     AssetEntry Entry;
                     Entry.Id = TextureJson.value("id", "");
@@ -55,9 +57,10 @@ namespace Core
                 }
             }
 
-            if (J.contains("sounds"))
+            constexpr const char* SoundsKey = "sounds";
+            if (Data.contains(SoundsKey))
             {
-                for (const auto& SoundJson : J["sounds"])
+                for (const auto& SoundJson : Data[SoundsKey])
                 {
                     AssetEntry Entry;
                     Entry.Id = SoundJson.value("id", "");
@@ -70,8 +73,21 @@ namespace Core
                 }
             }
 
-            std::printf("Loaded asset manifest: %s (%zu fonts, %zu textures, %zu sounds)\n",
-                path.c_str(), Manifest.Fonts.size(), Manifest.Textures.size(), Manifest.Sounds.size());
+            constexpr const char* ObjectsKey = "objects";
+            if (Data.contains(ObjectsKey))
+            {
+                for (const auto& ObjectJson : Data[ObjectsKey])
+                {
+                    Manifest.Objects.push_back({
+                        .Type = ObjectJson["type"],
+                        .Overrides = ObjectJson
+                    });
+                }
+            }
+
+            std::printf("Loaded asset manifest: %s (%zu fonts, %zu textures, %zu sounds, %zu objects)\n",
+                        path.c_str(), Manifest.Fonts.size(), Manifest.Textures.size(), Manifest.Sounds.size(),
+                        Manifest.Objects.size());
         }
         catch (const json::exception& E)
         {

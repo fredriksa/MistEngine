@@ -6,6 +6,7 @@ namespace Core
     {
         InputSystem,
         SceneManagerSystem,
-        AssetRegistrySystem
+        AssetRegistrySystem,
+        DataAssetRegistrySystem
     };
 }

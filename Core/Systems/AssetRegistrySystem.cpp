@@ -37,6 +37,11 @@ namespace Core
         }
     }
 
+    bool AssetRegistrySystem::Contains(const std::string& Path) const
+    {
+        return PathToAssetId.contains(Path);
+    }
+
     void AssetRegistrySystem::Unload(AssetId Id)
     {
         if (!Metadata.contains(Id))

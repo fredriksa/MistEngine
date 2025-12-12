@@ -9,6 +9,7 @@
 #include "Assets/AssetLoader.h"
 #include "Assets/AssetManifest.h"
 #include "Systems/AssetRegistrySystem.h"
+#include "Systems/DataAssetRegistrySystem.h"
 #include "Systems/InputSystem.h"
 #include "Systems/SceneManagerSystem.h"
 
@@ -25,6 +26,7 @@ namespace Core
         SystemsRegistry->Register<AssetRegistrySystem>(Context);
         SystemsRegistry->Register<InputSystem>(Context);
         SystemsRegistry->Register<SceneManagerSystem>(Context);
+        SystemsRegistry->Register<DataAssetRegistrySystem>(Context);
     }
 
     void Engine::LoadGlobalAssets()
@@ -36,7 +38,7 @@ namespace Core
             return;
         }
 
-        AssetLoader Loader(SystemsRegistry->GetCoreSystem<AssetRegistrySystem>());
+        AssetLoader Loader(SystemsRegistry->GetCoreSystem<AssetRegistrySystem>(), SystemsRegistry->GetCoreSystem<DataAssetRegistrySystem>());
         const AssetManifest Manifest = AssetManifest::LoadFromFile(GlobalAssetPath);
 
         for (const AssetEntry& TextureAssetEntry : Manifest.Textures)

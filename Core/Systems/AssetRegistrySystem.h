@@ -20,14 +20,19 @@ namespace Core
 
         void Shutdown() override;
 
-        template <typename T>
-        AssetId Store(std::shared_ptr<T> Asset, const std::string& Path);
-
         void Release(AssetId Id);
 
+        bool Contains(const std::string& Path) const;
+        
         template <typename T>
-        std::shared_ptr<T> Get(AssetId Id);
+        AssetId Store(std::shared_ptr<T> Asset, const std::string& Path);
+        
+        template <typename T>
+        std::shared_ptr<const T> Get(const std::string& Path);
 
+        template <typename T>
+        std::shared_ptr<const T> Get(AssetId Id);
+    
     private:
         void Unload(AssetId Id);
 
@@ -68,7 +73,19 @@ namespace Core
     }
 
     template <typename T>
-    std::shared_ptr<T> AssetRegistrySystem::Get(AssetId AssetId)
+    std::shared_ptr<const T> AssetRegistrySystem::Get(const std::string& Path)
+    {
+        auto PathIt = PathToAssetId.find(Path);
+        if (PathIt == PathToAssetId.end())
+        {
+            std::printf("Asset not found for path: %s\n", Path.c_str());
+            return nullptr;
+        }
+        return Get<T>(PathIt->second);
+    }
+
+    template <typename T>
+    std::shared_ptr<const T> AssetRegistrySystem::Get(AssetId AssetId)
     {
         auto AssetMap = GetAssetMap<T>();
         auto it = AssetMap->find(AssetId);

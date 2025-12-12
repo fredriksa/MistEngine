@@ -5,6 +5,7 @@
 
 #include "Engine.h"
 #include "Systems/AssetRegistrySystem.h"
+#include "Systems/DataAssetRegistrySystem.h"
 #include "Assets/AssetManifest.h"
 #include "Assets/AssetLoader.h"
 
@@ -13,6 +14,7 @@ namespace Core
     Scene::Scene(std::shared_ptr<EngineContext> Context, std::string Name)
         : Name(std::move(Name))
           , Context(std::move(Context))
+          , World(this->Context)
     {
     }
 
@@ -34,8 +36,11 @@ namespace Core
     {
         std::printf("Scene '%s' loading...\n", Name.c_str());
 
-        auto AssetRegistry = Context->SystemsRegistry->GetCoreSystem<AssetRegistrySystem>();
-        Loader = std::make_unique<AssetLoader>(AssetRegistry);
+        std::shared_ptr<AssetRegistrySystem> AssetRegistry = Context->SystemsRegistry->GetCoreSystem<
+            AssetRegistrySystem>();
+        std::shared_ptr<DataAssetRegistrySystem> DataAssetRegistry = Context->SystemsRegistry->GetCoreSystem<
+            DataAssetRegistrySystem>();
+        Loader = std::make_unique<AssetLoader>(AssetRegistry, DataAssetRegistry);
 
         std::string NameLower = Name;
         std::transform(NameLower.begin(), NameLower.end(), NameLower.begin(), ::tolower);
@@ -54,6 +59,16 @@ namespace Core
         for (const auto& SoundEntry : Manifest.Sounds)
         {
             Loader->QueueSound(SoundEntry.Path);
+        }
+
+        std::unordered_set<std::string> ObjectsToLoad;
+        for (const auto& ObjectEntry : Manifest.Objects)
+        {
+            ObjectsToLoad.emplace(ObjectEntry.Type);
+        }
+        for (const std::string& ObjectType : ObjectsToLoad)
+        {
+            Loader->QueueObject(ObjectType);
         }
 
         LoadedAssets = co_await Loader->LoadAllAsync();

@@ -18,9 +18,12 @@ namespace Core
 
 namespace Core
 {
+    struct EngineContext;
+
     class WorldObject : public ITickable, public IRenderable
     {
     public:
+        WorldObject(std::shared_ptr<EngineContext> Context);
         Transform& GetTransform() { return Transform; }
 
         void Tick(float DeltaTimeS) final;
@@ -38,7 +41,10 @@ namespace Core
             requires IsComponent<T>
         bool RemoveComponent();
 
+        const EngineContext& GetContext();
+
     private:
+        std::shared_ptr<EngineContext> Context;
         Transform Transform;
         std::unordered_map<std::type_index, std::shared_ptr<Component>> TypeToComponent;
     };

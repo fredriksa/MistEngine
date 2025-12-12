@@ -5,6 +5,7 @@
 #include "../Interfaces/IRenderable.hpp"
 #include "../Interfaces/ITickable.hpp"
 #include "../World/WorldObject.h"
+#include "../ThirdParty/json.hpp"
 
 namespace Core
 {
@@ -33,6 +34,10 @@ namespace Core
         {
         }
 
+        virtual void FromJson(const nlohmann::json& Data)
+        {
+        }
+
         template <typename T>
             requires IsComponent<T>
         T* GetComponent()
@@ -43,6 +48,9 @@ namespace Core
             }
             return nullptr;
         }
+
+    protected:
+        const EngineContext& GetContext() { return GetOwner()->GetContext(); }
 
     private:
         std::weak_ptr<WorldObject> OwnerWeak;

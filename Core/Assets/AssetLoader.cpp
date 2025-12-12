@@ -1,33 +1,58 @@
 ﻿#include "AssetLoader.h"
 
 #include "../Systems/AssetRegistrySystem.h"
+#include "../Systems/DataAssetRegistrySystem.h"
 #include <future>
 #include "../Async/Awaitable.hpp"
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
 
+#include "DataAsset.h"
+
 
 namespace Core
 {
-    AssetLoader::AssetLoader(std::shared_ptr<AssetRegistrySystem> Registry)
-        : AssetRegistry(std::move(Registry))
+    AssetLoader::AssetLoader(std::shared_ptr<AssetRegistrySystem> AssetRegistry,
+                             std::shared_ptr<DataAssetRegistrySystem> DataAssetRegistry)
+        : AssetRegistry(std::move(AssetRegistry)), DataAssetRegistry(std::move(DataAssetRegistry))
     {
     }
 
     void AssetLoader::QueueTexture(const std::string& Path)
     {
-        QueuedRequests.push_back({AssetType::Texture, Path});
+        if (ShouldQueue(Path, AssetType::Texture))
+        {
+            QueuedRequests.push_back({AssetType::Texture, Path});
+        }
     }
 
     void AssetLoader::QueueFont(const std::string& Path, unsigned int FontSize)
     {
-        QueuedRequests.push_back({AssetType::Font, Path, FontSize});
+        if (ShouldQueue(Path, AssetType::Font))
+        {
+            QueuedRequests.push_back({AssetType::Font, Path, FontSize});
+        }
     }
 
     void AssetLoader::QueueSound(const std::string& Path)
     {
-        QueuedRequests.push_back({AssetType::Sound, Path});
+        if (ShouldQueue(Path, AssetType::Sound))
+        {
+            QueuedRequests.push_back({AssetType::Sound, Path});
+        }
+    }
+
+    void AssetLoader::QueueObject(const std::string Type)
+    {
+        std::string NameLower = Type;
+        std::ranges::transform(NameLower, NameLower.begin(), ::tolower);
+        const std::string ObjectPath = "Game/Assets/Objects/" + NameLower + ".json";
+
+        if (ShouldQueue(ObjectPath, AssetType::Object))
+        {
+            QueuedRequests.push_back({AssetType::Object, ObjectPath});
+        }
     }
 
     void AssetLoader::Clear()
@@ -40,27 +65,121 @@ namespace Core
         TotalCount = static_cast<int>(QueuedRequests.size());
         CompletedCount = 0;
 
-        std::vector<std::future<LoadedAsset>> Futures;
+        std::vector<AssetId> AllLoadedIds;
 
-        for (const LoadRequest& Request : QueuedRequests)
+        // Phase one: load DataAssets
+        std::vector<LoadRequest> ObjectRequests;
+        std::vector<LoadRequest> BinaryRequests;
+
+        for (const auto& Request : QueuedRequests)
         {
-            Futures.push_back(std::async(std::launch::async, [this, Request]()
+            if (Request.Type == AssetType::Object)
             {
-                LoadedAsset LoadedAsset = LoadAsset(Request);
+                ObjectRequests.push_back(Request);
+            }
+            else
+            {
+                BinaryRequests.push_back(Request);
+            }
+        }
+
+        // Load all DataAssets in parallel
+        std::vector<std::future<LoadedAsset>> ObjectFutures;
+        ObjectFutures.reserve(ObjectRequests.size());
+
+        for (const auto& Request : ObjectRequests)
+        {
+            ObjectFutures.push_back(std::async(std::launch::async, [this, Request]()
+            {
+                LoadedAsset Asset = LoadAsset(Request);
                 ++CompletedCount;
-                return LoadedAsset;
+                return Asset;
             }));
         }
 
-        std::vector<LoadedAsset> Results;
-        Results.reserve(Futures.size());
-        for (auto& Future : Futures)
+        // Await all DataAssets
+        std::vector<LoadedAsset> LoadedDataAssets;
+        LoadedDataAssets.reserve(ObjectFutures.size());
+        for (auto& Future : ObjectFutures)
         {
-            Results.push_back(co_await Future);
+            LoadedDataAssets.push_back(co_await Future);
         }
 
-        std::vector<AssetId> LoadedIds;
-        for (const LoadedAsset& Result : Results)
+        // Store DataAssets and extract dependencies
+        for (const auto& Result : LoadedDataAssets)
+        {
+            if (Result.Success)
+            {
+                auto LoadedDataAsset = std::static_pointer_cast<DataAsset>(Result.Data);
+                DataAssetRegistry->Store(LoadedDataAsset->Name, LoadedDataAsset);
+
+                for (const auto& Component : LoadedDataAsset->Components)
+                {
+                    std::vector<AssetReference> DiscoveredAssets;
+                    ScanForAssets(Component.Data, DiscoveredAssets);
+
+                    for (const auto& AssetRef : DiscoveredAssets)
+                    {
+                        switch (AssetRef.Type)
+                        {
+                        case AssetType::Texture:
+                            QueueTexture(AssetRef.Path);
+                            break;
+                        case AssetType::Sound:
+                            QueueSound(AssetRef.Path);
+                            break;
+                        case AssetType::Font:
+                            QueueFont(AssetRef.Path);
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                std::printf("Could not load DataAsset: %s\n", Result.Path.c_str());
+            }
+        }
+
+        // Phase two: load binary DataAssets
+        TotalCount = static_cast<int>(QueuedRequests.size());
+
+        // Collect all binary requests (original + discovered)
+        BinaryRequests.clear();
+        for (const auto& Request : QueuedRequests)
+        {
+            if (Request.Type != AssetType::Object)
+            {
+                BinaryRequests.push_back(Request);
+            }
+        }
+
+        // Load all binary assets in parallel
+        std::vector<std::future<LoadedAsset>> BinaryFutures;
+        BinaryFutures.reserve(BinaryRequests.size());
+
+        for (const auto& Request : BinaryRequests)
+        {
+            BinaryFutures.push_back(std::async(std::launch::async, [this, Request]()
+            {
+                LoadedAsset Asset = LoadAsset(Request);
+                ++CompletedCount;
+                return Asset;
+            }));
+        }
+
+        // Await all binary assets
+        std::vector<LoadedAsset> LoadedBinaryAssets;
+        LoadedBinaryAssets.reserve(BinaryFutures.size());
+        for (auto& Future : BinaryFutures)
+        {
+            LoadedBinaryAssets.push_back(co_await Future);
+        }
+
+        // Store binary assets
+        for (const auto& Result : LoadedBinaryAssets)
         {
             if (Result.Success)
             {
@@ -85,8 +204,11 @@ namespace Core
                         Result.Path
                     );
                     break;
+                default:
+                    assert(false);
+                    break;
                 }
-                LoadedIds.push_back(Id);
+                AllLoadedIds.push_back(Id);
             }
             else
             {
@@ -95,7 +217,7 @@ namespace Core
         }
 
         QueuedRequests.clear();
-        co_return LoadedIds;
+        co_return AllLoadedIds;
     }
 
     float AssetLoader::GetProgress() const
@@ -107,12 +229,75 @@ namespace Core
         return static_cast<float>(CompletedCount.load()) / static_cast<float>(TotalCount.load());
     }
 
+    bool AssetLoader::ShouldQueue(const std::string& Path, AssetType Type) const
+    {
+        if (AssetRegistry->Contains(Path))
+        {
+            return false;
+        }
+
+        // :TODO: Usage of this func can be made more performant instead of iterating through all the queued requests
+        // for each asset to be loaded at least once.
+        return !std::any_of(QueuedRequests.begin(), QueuedRequests.end(), [&](const LoadRequest& Request)
+        {
+            return Type == Request.Type && Request.Path == Path;
+        });
+    }
+
+    AssetLoader::AssetType AssetLoader::GetAssetTypeFromExtension(const std::string& Path) const
+    {
+        if (Path.ends_with(".png") || Path.ends_with(".jpg") ||
+            Path.ends_with(".jpeg") || Path.ends_with(".bmp"))
+        {
+            return AssetType::Texture;
+        }
+        if (Path.ends_with(".wav") || Path.ends_with(".ogg") || Path.ends_with(".mp3"))
+        {
+            return AssetType::Sound;
+        }
+        if (Path.ends_with(".ttf") || Path.ends_with(".otf"))
+        {
+            return AssetType::Font;
+        }
+
+        return AssetType::Invalid;
+    }
+
+    void AssetLoader::ScanForAssets(const nlohmann::json& Data, std::vector<AssetReference>& OutAssets)
+    {
+        if (Data.is_string())
+        {
+            std::string str = Data.get<std::string>();
+            AssetType type = GetAssetTypeFromExtension(str);
+            if (type != AssetType::Invalid)
+            {
+                OutAssets.push_back({str, type});
+            }
+        }
+        else if (Data.is_object())
+        {
+            for (auto& [Key, value] : Data.items())
+            {
+                ScanForAssets(value, OutAssets);
+            }
+        }
+        else if (Data.is_array())
+        {
+            for (auto& Element : Data)
+            {
+                ScanForAssets(Element, OutAssets);
+            }
+        }
+
+        // Don't check primitives e.g., ints and don't recurse further
+    }
+
     AssetLoader::LoadedAsset AssetLoader::LoadAsset(const LoadRequest& Request)
     {
-        LoadedAsset result;
-        result.Type = Request.Type;
-        result.Path = Request.Path;
-        result.Success = false;
+        LoadedAsset Result;
+        Result.Type = Request.Type;
+        Result.Path = Request.Path;
+        Result.Success = false;
 
         try
         {
@@ -123,12 +308,12 @@ namespace Core
                     auto texture = std::make_shared<sf::Texture>();
                     if (texture->loadFromFile(Request.Path))
                     {
-                        result.Data = texture;
-                        result.Success = true;
+                        Result.Data = texture;
+                        Result.Success = true;
                     }
                     else
                     {
-                        result.ErrorMessage = "Failed to load texture";
+                        Result.ErrorMessage = "Failed to load texture";
                     }
                 }
                 break;
@@ -138,12 +323,12 @@ namespace Core
                     auto font = std::make_shared<sf::Font>();
                     if (font->openFromFile(Request.Path))
                     {
-                        result.Data = font;
-                        result.Success = true;
+                        Result.Data = font;
+                        Result.Success = true;
                     }
                     else
                     {
-                        result.ErrorMessage = "Failed to load font";
+                        Result.ErrorMessage = "Failed to load font";
                     }
                 }
                 break;
@@ -153,22 +338,39 @@ namespace Core
                     auto sound = std::make_shared<sf::SoundBuffer>();
                     if (sound->loadFromFile(Request.Path))
                     {
-                        result.Data = sound;
-                        result.Success = true;
+                        Result.Data = sound;
+                        Result.Success = true;
                     }
                     else
                     {
-                        result.ErrorMessage = "Failed to load sound";
+                        Result.ErrorMessage = "Failed to load sound";
                     }
                 }
+                break;
+            case AssetType::Object:
+                {
+                    if (std::optional<DataAsset> LoadedDataAsset = DataAsset::LoadFromFile(Request.Path))
+                    {
+                        Result.Data = std::make_shared<DataAsset>(
+                            std::move(LoadedDataAsset.value()));
+                        Result.Success = true;
+                    }
+                    else
+                    {
+                        Result.ErrorMessage = "Failed to load asset";
+                    }
+                    break;
+                }
+            default:
+                assert(false);
                 break;
             }
         }
         catch (const std::exception& e)
         {
-            result.ErrorMessage = e.what();
+            Result.ErrorMessage = e.what();
         }
 
-        return result;
+        return Result;
     }
 }
