@@ -1,0 +1,33 @@
+#include "ComponentManager.h"
+
+#include "../Components/Component.h"
+#include <ranges>
+
+namespace Core
+{
+    ComponentManager::ComponentManager(WorldObject* Owner)
+        : Owner(Owner)
+    {
+    }
+
+    void ComponentManager::Attach(std::shared_ptr<Component> Component)
+    {
+        TypeToComponent.emplace(std::type_index(typeid(*Component)), Component);
+    }
+
+    void ComponentManager::Tick(float DeltaTimeS)
+    {
+        for (std::shared_ptr<Component>& Component : TypeToComponent | std::views::values)
+        {
+            Component->Tick(DeltaTimeS);
+        }
+    }
+
+    void ComponentManager::Render()
+    {
+        for (std::shared_ptr<Component>& Component : TypeToComponent | std::views::values)
+        {
+            Component->Render();
+        }
+    }
+}

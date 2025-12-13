@@ -34,7 +34,7 @@ namespace Core
             std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(
                 AssetComponentData.Type, WorldObj);
             Component->Initialize(MergedAssetComponentData);
-            WorldObj->AttachComponent(Component);
+            WorldObj->Components().Attach(Component);
         }
         return WorldObj;
     }

@@ -1,0 +1,72 @@
+#pragma once
+
+#include <memory>
+#include <typeindex>
+#include <unordered_map>
+
+#include "../Components/ComponentConcept.hpp"
+
+namespace Core
+{
+    class Component;
+    class WorldObject;
+
+    class ComponentManager
+    {
+    public:
+        ComponentManager(WorldObject* Owner);
+
+        void Attach(std::shared_ptr<Component> Component);
+
+        template <typename T>
+            requires IsComponent<T>
+        T* Add();
+
+        template <class T>
+            requires IsComponent<T>
+        std::shared_ptr<T> Get();
+
+        template <class T>
+            requires IsComponent<T>
+        bool Remove();
+
+        void Tick(float DeltaTimeS);
+        void Render();
+
+    private:
+        WorldObject* Owner;
+        std::unordered_map<std::type_index, std::shared_ptr<Component>> TypeToComponent;
+    };
+
+    template <typename T> requires IsComponent<T>
+    T* ComponentManager::Add()
+    {
+        std::shared_ptr<T> Component = std::make_shared<T>(Owner);
+        TypeToComponent.emplace(std::type_index(typeid(T)), Component);
+        return Component.get();
+    }
+
+    template <typename T> requires IsComponent<T>
+    std::shared_ptr<T> ComponentManager::Get()
+    {
+        auto it = TypeToComponent.find(std::type_index(typeid(T)));
+        if (it != TypeToComponent.end())
+        {
+            return std::static_pointer_cast<T>(it->second);
+        }
+        return nullptr;
+    }
+
+    template <typename T> requires IsComponent<T>
+    bool ComponentManager::Remove()
+    {
+        auto it = TypeToComponent.find(std::type_index(typeid(T)));
+        if (it != TypeToComponent.end())
+        {
+            TypeToComponent.erase(it);
+            return true;
+        }
+
+        return false;
+    }
+}
