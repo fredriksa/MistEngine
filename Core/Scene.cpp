@@ -8,6 +8,7 @@
 #include "Systems/DataAssetRegistrySystem.h"
 #include "Assets/AssetManifest.h"
 #include "Assets/AssetLoader.h"
+#include "Systems/WorldObjectSystem.h"
 
 namespace Core
 {
@@ -46,7 +47,7 @@ namespace Core
         std::transform(NameLower.begin(), NameLower.end(), NameLower.begin(), ::tolower);
         std::string ManifestPath = "Game/Assets/Scenes/" + NameLower + ".json";
 
-        auto Manifest = AssetManifest::LoadFromFile(ManifestPath, "Game/Assets/Scenes/");
+        AssetManifest Manifest = AssetManifest::LoadFromFile(ManifestPath, "Game/Assets/Scenes/");
 
         for (const auto& TextureEntry : Manifest.Textures)
         {
@@ -74,6 +75,19 @@ namespace Core
         LoadedAssets = co_await Loader->LoadAllAsync();
 
         std::printf("Scene '%s' loaded %zu assets\n", Name.c_str(), LoadedAssets.size());
+
+        if (!Manifest.Objects.empty())
+        {
+            std::shared_ptr<WorldObjectSystem> WorldObjectSys = Context->SystemsRegistry->GetCoreSystem<
+                WorldObjectSystem>();
+            for (const ObjectEntry& Entry : Manifest.Objects)
+            {
+                if (const std::shared_ptr<DataAsset>& DataAsset = DataAssetRegistry->Get(Entry.Type))
+                {
+                    World.Register(WorldObjectSys->Create(*DataAsset, Entry.Overrides));
+                }
+            }
+        }
 
         OnLoad();
         co_return;

@@ -11,7 +11,7 @@ namespace Core
     public:
         SpriteComponent(const std::shared_ptr<WorldObject>& Owner);
 
-        void FromJson(const nlohmann::json& Data) override;
+        bool Initialize(const nlohmann::json& Data) override;
         void Render() override;
 
     private:

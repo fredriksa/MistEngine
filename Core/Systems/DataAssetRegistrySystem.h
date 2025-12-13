@@ -14,7 +14,6 @@ namespace Core
         DataAssetRegistrySystem(std::shared_ptr<EngineContext> InContext);
         ~DataAssetRegistrySystem() override = default;
 
-        std::shared_ptr<DataAsset> Load(const std::string& Path);
         std::shared_ptr<DataAsset> Get(const std::string& Name);
         void Store(const std::string& Name, std::shared_ptr<DataAsset> Asset);
 

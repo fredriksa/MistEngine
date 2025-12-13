@@ -12,6 +12,7 @@
 #include "Systems/DataAssetRegistrySystem.h"
 #include "Systems/InputSystem.h"
 #include "Systems/SceneManagerSystem.h"
+#include "Systems/WorldObjectSystem.h"
 
 namespace Core
 {
@@ -27,6 +28,7 @@ namespace Core
         SystemsRegistry->Register<InputSystem>(Context);
         SystemsRegistry->Register<SceneManagerSystem>(Context);
         SystemsRegistry->Register<DataAssetRegistrySystem>(Context);
+        SystemsRegistry->Register<WorldObjectSystem>(Context);
     }
 
     void Engine::LoadGlobalAssets()

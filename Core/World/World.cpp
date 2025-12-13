@@ -22,4 +22,9 @@ namespace Core
             WorldObject->Render();
         }
     }
+
+    void World::Register(std::shared_ptr<WorldObject> WorldObject)
+    {
+        WorldObjects.push_back(std::move(WorldObject));
+    }
 }

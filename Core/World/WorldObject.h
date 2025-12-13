@@ -29,6 +29,8 @@ namespace Core
         void Tick(float DeltaTimeS) final;
         void Render() final;
 
+        void AttachComponent(std::shared_ptr<Component> Component);
+
         template <typename T>
             requires IsComponent<T>
         T* AddComponent();
@@ -41,7 +43,7 @@ namespace Core
             requires IsComponent<T>
         bool RemoveComponent();
 
-        const EngineContext& GetContext();
+        const EngineContext& GetContext() const;
 
     private:
         std::shared_ptr<EngineContext> Context;

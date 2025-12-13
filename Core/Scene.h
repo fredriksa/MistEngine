@@ -34,7 +34,7 @@ namespace Core
     protected:
         virtual void OnLoad()
         {
-        };
+        }
 
         virtual void OnEnter()
         {

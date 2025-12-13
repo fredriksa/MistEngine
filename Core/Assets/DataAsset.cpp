@@ -17,7 +17,9 @@ namespace Core
         File >> Json;
 
         DataAsset Asset;
-        Asset.Name = Json.value("name", "Unknown");
+        const size_t LastSlash = Path.find_last_of("/\\");
+        const size_t LastDot = Path.find_last_of('.');
+        Asset.Name = Path.substr(LastSlash + 1, LastDot - LastSlash - 1);
         if (Json.contains("components") && Json["components"].is_array())
         {
             for (const auto& ComponentJson : Json["components"])

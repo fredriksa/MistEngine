@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "../EngineContext.hpp"
 #include "../Interfaces/IRenderable.hpp"
 #include "../Interfaces/ITickable.hpp"
 #include "../World/WorldObject.h"
@@ -12,19 +13,9 @@ namespace Core
     class Component : public ITickable, public IRenderable
     {
     public:
-        Component(const std::shared_ptr<WorldObject>& Owner)
-            : OwnerWeak(Owner)
-        {
-        }
+        Component(const std::shared_ptr<WorldObject>& Owner);
 
-        WorldObject* GetOwner() const
-        {
-            if (std::shared_ptr<WorldObject> Locked = OwnerWeak.lock())
-            {
-                return Locked.get();
-            }
-            return nullptr;
-        }
+        WorldObject* GetOwner() const;
 
         virtual void Tick(float DeltaTimeS) override
         {
@@ -34,8 +25,9 @@ namespace Core
         {
         }
 
-        virtual void FromJson(const nlohmann::json& Data)
+        virtual bool Initialize(const nlohmann::json& Data)
         {
+            return true;
         }
 
         template <typename T>

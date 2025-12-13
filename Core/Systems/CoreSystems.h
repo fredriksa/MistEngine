@@ -7,6 +7,7 @@ namespace Core
         InputSystem,
         SceneManagerSystem,
         AssetRegistrySystem,
-        DataAssetRegistrySystem
+        DataAssetRegistrySystem,
+        WorldObjectSystem
     };
 }

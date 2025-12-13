@@ -7,26 +7,6 @@ namespace Core
     {
     }
 
-    // :TODO: Maybe we can get rid of this func?
-    std::shared_ptr<DataAsset> DataAssetRegistrySystem::Load(const std::string& Path)
-    {
-        std::optional<DataAsset> Asset = DataAsset::LoadFromFile(Path);
-        if (!Asset)
-        {
-            return nullptr;
-        }
-
-        if (Cache.contains(Asset->Name))
-        {
-            return Cache[Asset->Name];
-        }
-
-        auto SharedAsset = std::make_shared<DataAsset>(std::move(Asset.value()));
-        Cache[SharedAsset->Name] = SharedAsset;
-        std::printf("DataAsset '%s' loaded and cached\n", SharedAsset->Name.c_str());
-        return SharedAsset;
-    }
-
     std::shared_ptr<DataAsset> DataAssetRegistrySystem::Get(const std::string& Name)
     {
         if (Cache.contains(Name))
@@ -41,5 +21,5 @@ namespace Core
     void DataAssetRegistrySystem::Store(const std::string& Name, std::shared_ptr<DataAsset> Asset)
     {
         Cache[Name] = Asset;
-    } 
+    }
 }

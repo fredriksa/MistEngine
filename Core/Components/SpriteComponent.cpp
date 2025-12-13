@@ -14,19 +14,30 @@ namespace Core
     {
     }
 
-    void SpriteComponent::FromJson(const nlohmann::json& Data)
+    bool SpriteComponent::Initialize(const nlohmann::json& Data)
     {
-        const std::string TextureAssetId{Data.value("texture", "")};
-
-        const std::shared_ptr<AssetRegistrySystem> AssetRegistry = GetContext().SystemsRegistry->GetCoreSystem<
+        const EngineContext& Context = GetContext();
+        std::shared_ptr<AssetRegistrySystem> AssetRegistry = Context.SystemsRegistry->GetCoreSystem<
             AssetRegistrySystem>();
 
+        const std::string TextureAssetId{Data.value("texture", "")};
+        if (TextureAssetId.empty())
+        {
+            return false;
+        }
+
         std::shared_ptr<const sf::Texture> Texture = AssetRegistry->Get<sf::Texture>(TextureAssetId);
+        if (!Texture)
+        {
+            return false;
+        }
+
         Sprite = std::make_shared<sf::Sprite>(*Texture);
         Sprite->setScale({1.f, 1.f});
         const auto Size = static_cast<sf::Vector2f>(GetContext().WindowSize);
         const auto HalfSize = sf::Vector2f(Size.x / 2, Size.y / 2);
         Sprite->setPosition(HalfSize);
+        return true;
     }
 
     void SpriteComponent::Render()
