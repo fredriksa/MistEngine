@@ -9,6 +9,7 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 
 #include "DataAsset.h"
+#include "../Utils/StringUtils.h"
 
 
 namespace Core
@@ -45,9 +46,7 @@ namespace Core
 
     void AssetLoader::QueueObject(const std::string Type)
     {
-        std::string NameLower = Type;
-        std::ranges::transform(NameLower, NameLower.begin(), ::tolower);
-        const std::string ObjectPath = "Game/Assets/Objects/" + NameLower + ".json";
+        const std::string ObjectPath = "Game/Assets/Objects/" + ToLowercase(Type) + ".json";
 
         if (ShouldQueue(ObjectPath, AssetType::Object))
         {
@@ -60,36 +59,32 @@ namespace Core
         QueuedRequests.clear();
     }
 
-    Task<std::vector<AssetId>> AssetLoader::LoadAllAsync()
+    void AssetLoader::SeparateRequestsByType(
+        std::vector<LoadRequest>& OutObjectRequests,
+        std::vector<LoadRequest>& OutBinaryRequests)
     {
-        TotalCount = static_cast<int>(QueuedRequests.size());
-        CompletedCount = 0;
-
-        std::vector<AssetId> AllLoadedIds;
-
-        // Phase one: load DataAssets
-        std::vector<LoadRequest> ObjectRequests;
-        std::vector<LoadRequest> BinaryRequests;
-
         for (const auto& Request : QueuedRequests)
         {
             if (Request.Type == AssetType::Object)
             {
-                ObjectRequests.push_back(Request);
+                OutObjectRequests.push_back(Request);
             }
             else
             {
-                BinaryRequests.push_back(Request);
+                OutBinaryRequests.push_back(Request);
             }
         }
+    }
 
-        // Load all DataAssets in parallel
-        std::vector<std::future<LoadedAsset>> ObjectFutures;
-        ObjectFutures.reserve(ObjectRequests.size());
+    Task<std::vector<AssetLoader::LoadedAsset>> AssetLoader::LoadAssetsInParallel(
+        const std::vector<LoadRequest>& Requests)
+    {
+        std::vector<std::future<LoadedAsset>> Futures;
+        Futures.reserve(Requests.size());
 
-        for (const auto& Request : ObjectRequests)
+        for (const auto& Request : Requests)
         {
-            ObjectFutures.push_back(std::async(std::launch::async, [this, Request]()
+            Futures.push_back(std::async(std::launch::async, [this, Request]()
             {
                 LoadedAsset Asset = LoadAsset(Request);
                 ++CompletedCount;
@@ -97,16 +92,19 @@ namespace Core
             }));
         }
 
-        // Await all DataAssets
-        std::vector<LoadedAsset> LoadedDataAssets;
-        LoadedDataAssets.reserve(ObjectFutures.size());
-        for (auto& Future : ObjectFutures)
+        std::vector<LoadedAsset> Results;
+        Results.reserve(Futures.size());
+        for (auto& Future : Futures)
         {
-            LoadedDataAssets.push_back(co_await Future);
+            Results.push_back(co_await Future);
         }
 
-        // Store DataAssets and extract dependencies
-        for (const auto& Result : LoadedDataAssets)
+        co_return Results;
+    }
+
+    void AssetLoader::ProcessLoadedDataAssets(const std::vector<LoadedAsset>& LoadedAssets)
+    {
+        for (const auto& Result : LoadedAssets)
         {
             if (Result.Success)
             {
@@ -142,44 +140,13 @@ namespace Core
                 std::printf("Could not load DataAsset: %s\n", Result.Path.c_str());
             }
         }
+    }
 
-        // Phase two: load binary DataAssets
-        TotalCount = static_cast<int>(QueuedRequests.size());
+    std::vector<AssetId> AssetLoader::ProcessLoadedBinaryAssets(const std::vector<LoadedAsset>& LoadedAssets)
+    {
+        std::vector<AssetId> LoadedIds;
 
-        // Collect all binary requests (original + discovered)
-        BinaryRequests.clear();
-        for (const auto& Request : QueuedRequests)
-        {
-            if (Request.Type != AssetType::Object)
-            {
-                BinaryRequests.push_back(Request);
-            }
-        }
-
-        // Load all binary assets in parallel
-        std::vector<std::future<LoadedAsset>> BinaryFutures;
-        BinaryFutures.reserve(BinaryRequests.size());
-
-        for (const auto& Request : BinaryRequests)
-        {
-            BinaryFutures.push_back(std::async(std::launch::async, [this, Request]()
-            {
-                LoadedAsset Asset = LoadAsset(Request);
-                ++CompletedCount;
-                return Asset;
-            }));
-        }
-
-        // Await all binary assets
-        std::vector<LoadedAsset> LoadedBinaryAssets;
-        LoadedBinaryAssets.reserve(BinaryFutures.size());
-        for (auto& Future : BinaryFutures)
-        {
-            LoadedBinaryAssets.push_back(co_await Future);
-        }
-
-        // Store binary assets
-        for (const auto& Result : LoadedBinaryAssets)
+        for (const auto& Result : LoadedAssets)
         {
             if (Result.Success)
             {
@@ -208,13 +175,42 @@ namespace Core
                     assert(false);
                     break;
                 }
-                AllLoadedIds.push_back(Id);
+                LoadedIds.push_back(Id);
             }
             else
             {
                 std::printf("Could not load asset with path: %s\n", Result.Path.c_str());
             }
         }
+
+        return LoadedIds;
+    }
+
+    Task<std::vector<AssetId>> AssetLoader::LoadAllAsync()
+    {
+        TotalCount = static_cast<int>(QueuedRequests.size());
+        CompletedCount = 0;
+
+        std::vector<LoadRequest> ObjectRequests;
+        std::vector<LoadRequest> BinaryRequests;
+        SeparateRequestsByType(ObjectRequests, BinaryRequests);
+
+        std::vector<LoadedAsset> LoadedDataAssets = co_await LoadAssetsInParallel(ObjectRequests);
+        ProcessLoadedDataAssets(LoadedDataAssets);
+
+        TotalCount = static_cast<int>(QueuedRequests.size());
+
+        BinaryRequests.clear();
+        for (const auto& Request : QueuedRequests)
+        {
+            if (Request.Type != AssetType::Object)
+            {
+                BinaryRequests.push_back(Request);
+            }
+        }
+
+        std::vector<LoadedAsset> LoadedBinaryAssets = co_await LoadAssetsInParallel(BinaryRequests);
+        std::vector<AssetId> AllLoadedIds = ProcessLoadedBinaryAssets(LoadedBinaryAssets);
 
         QueuedRequests.clear();
         co_return AllLoadedIds;

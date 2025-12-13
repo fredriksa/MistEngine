@@ -1,7 +1,6 @@
 ﻿#include "Scene.h"
 
 #include <cstdio>
-#include <algorithm>
 
 #include "Engine.h"
 #include "Systems/AssetRegistrySystem.h"
@@ -9,6 +8,7 @@
 #include "Assets/AssetManifest.h"
 #include "Assets/AssetLoader.h"
 #include "Systems/WorldObjectSystem.h"
+#include "Utils/StringUtils.h"
 
 namespace Core
 {
@@ -43,9 +43,7 @@ namespace Core
             DataAssetRegistrySystem>();
         Loader = std::make_unique<AssetLoader>(AssetRegistry, DataAssetRegistry);
 
-        std::string NameLower = Name;
-        std::transform(NameLower.begin(), NameLower.end(), NameLower.begin(), ::tolower);
-        std::string ManifestPath = "Game/Assets/Scenes/" + NameLower + ".json";
+        std::string ManifestPath = "Game/Assets/Scenes/" + ToLowercase(Name) + ".json";
 
         AssetManifest Manifest = AssetManifest::LoadFromFile(ManifestPath, "Game/Assets/Scenes/");
 

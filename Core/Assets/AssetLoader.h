@@ -56,10 +56,6 @@ namespace Core
         AssetType GetAssetTypeFromExtension(const std::string& Path) const;
         void ScanForAssets(const nlohmann::json& Data, std::vector<AssetReference>& OutAssets);
 
-    private:
-        std::shared_ptr<AssetRegistrySystem> AssetRegistry;
-        std::shared_ptr<DataAssetRegistrySystem> DataAssetRegistry;
-
         struct LoadRequest
         {
             AssetType Type;
@@ -75,6 +71,23 @@ namespace Core
             bool Success;
             std::string ErrorMessage;
         };
+
+        void SeparateRequestsByType(
+            std::vector<LoadRequest>& OutObjectRequests,
+            std::vector<LoadRequest>& OutBinaryRequests
+        );
+
+        Task<std::vector<LoadedAsset>> LoadAssetsInParallel(
+            const std::vector<LoadRequest>& Requests
+        );
+
+        void ProcessLoadedDataAssets(const std::vector<LoadedAsset>& LoadedAssets);
+
+        std::vector<AssetId> ProcessLoadedBinaryAssets(const std::vector<LoadedAsset>& LoadedAssets);
+
+    private:
+        std::shared_ptr<AssetRegistrySystem> AssetRegistry;
+        std::shared_ptr<DataAssetRegistrySystem> DataAssetRegistry;
 
         std::vector<LoadRequest> QueuedRequests;
 
