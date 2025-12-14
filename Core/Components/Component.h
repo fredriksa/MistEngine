@@ -36,7 +36,10 @@ namespace Core
         {
             if (WorldObject* Owner = GetOwner())
             {
-                return Owner->Components().Get<T>();
+                if (auto Component = Owner->Components().Get<T>())
+                {
+                    return Component.get();
+                }
             }
             return nullptr;
         }

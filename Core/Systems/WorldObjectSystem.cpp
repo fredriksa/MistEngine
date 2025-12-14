@@ -2,6 +2,7 @@
 
 #include "../Assets/DataAsset.h"
 #include "../Components/ComponentRegistry.h"
+#include "../Components/TransformComponent.h"
 #include "../World/WorldObject.h"
 #include "../Utils/JsonUtils.h"
 
@@ -16,6 +17,7 @@ namespace Core
                                                            const nlohmann::json& OverrideValues)
     {
         std::shared_ptr<WorldObject> WorldObj = std::make_shared<WorldObject>(GetContext());
+
         for (const ComponentData& AssetComponentData : DataAsset.Components)
         {
             nlohmann::json MergedAssetComponentData = AssetComponentData.Data;
@@ -36,6 +38,38 @@ namespace Core
             Component->Initialize(MergedAssetComponentData);
             WorldObj->Components().Attach(Component);
         }
+
+        if (OverrideValues.contains("components") && OverrideValues["components"].is_array())
+        {
+            for (const auto& OverrideComp : OverrideValues["components"])
+            {
+                std::string ComponentType = OverrideComp["type"].get<std::string>();
+                bool ExistsInTemplate = false;
+
+                for (const ComponentData& AssetComponentData : DataAsset.Components)
+                {
+                    if (AssetComponentData.Type == ComponentType)
+                    {
+                        ExistsInTemplate = true;
+                        break;
+                    }
+                }
+
+                if (!ExistsInTemplate)
+                {
+                    std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(
+                        ComponentType, WorldObj);
+                    Component->Initialize(OverrideComp["data"]);
+                    WorldObj->Components().Attach(Component);
+                }
+            }
+        }
+
+        if (!WorldObj->Components().Get<TransformComponent>())
+        {
+            WorldObj->Components().Add<TransformComponent>();
+        }
+
         return WorldObj;
     }
 }

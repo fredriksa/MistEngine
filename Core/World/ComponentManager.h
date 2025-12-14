@@ -39,14 +39,6 @@ namespace Core
     };
 
     template <typename T> requires IsComponent<T>
-    T* ComponentManager::Add()
-    {
-        std::shared_ptr<T> Component = std::make_shared<T>(Owner);
-        TypeToComponent.emplace(std::type_index(typeid(T)), Component);
-        return Component.get();
-    }
-
-    template <typename T> requires IsComponent<T>
     std::shared_ptr<T> ComponentManager::Get()
     {
         auto it = TypeToComponent.find(std::type_index(typeid(T)));

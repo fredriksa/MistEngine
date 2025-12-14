@@ -1,6 +1,7 @@
 ﻿#include "SpriteComponent.h"
 
 #include "ComponentRegistry.h"
+#include "TransformComponent.h"
 #include "../EngineContext.hpp"
 #include "../SystemsRegistry.hpp"
 #include "../Systems/AssetRegistrySystem.h"
@@ -34,14 +35,15 @@ namespace Core
 
         Sprite = std::make_shared<sf::Sprite>(*Texture);
         Sprite->setScale({1.f, 1.f});
-        const auto Size = static_cast<sf::Vector2f>(GetContext().WindowSize);
-        const auto HalfSize = sf::Vector2f(Size.x / 2, Size.y / 2);
-        Sprite->setPosition(HalfSize);
         return true;
     }
 
     void SpriteComponent::Render()
     {
+        if (TransformComponent* Transform = GetComponent<TransformComponent>())
+        {
+            Sprite->setPosition(Transform->Position);
+        }
         GetContext().Window->draw(*Sprite);
     }
 }
