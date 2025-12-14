@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -14,9 +14,6 @@
 
 namespace Core
 {
-    class AssetRegistrySystem;
-    class AssetLoader;
-
     class Scene : public ITickable, public IRenderable
     {
     public:
@@ -49,9 +46,6 @@ namespace Core
         std::string Name;
         std::shared_ptr<EngineContext> Context;
         World World;
-
-    private:
-        std::unique_ptr<AssetLoader> Loader;
     };
 
     template <typename T>
