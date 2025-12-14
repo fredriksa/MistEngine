@@ -23,18 +23,19 @@ namespace Core
         void Release(AssetId Id);
 
         bool Contains(const std::string& Path) const;
-        
+
         template <typename T>
         AssetId Store(std::shared_ptr<T> Asset, const std::string& Path);
-        
+
         template <typename T>
         std::shared_ptr<const T> Get(const std::string& Path);
 
         template <typename T>
         std::shared_ptr<const T> Get(AssetId Id);
-    
-    private:
+
         void Unload(AssetId Id);
+
+    private:
 
         template <typename T>
         std::unordered_map<AssetId, std::shared_ptr<T>>* GetAssetMap();

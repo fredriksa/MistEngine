@@ -4,12 +4,13 @@
 #include "../Systems/DataAssetRegistrySystem.h"
 #include <future>
 #include "../Async/Awaitable.hpp"
-#include <SFML/Graphics/Texture.hpp>
-#include <SFML/Graphics/Font.hpp>
-#include <SFML/Audio/SoundBuffer.hpp>
 
 #include "DataAsset.h"
 #include "../Utils/StringUtils.h"
+#include "Handlers/IAssetTypeHandler.h"
+#include "Handlers/TextureHandler.h"
+#include "Handlers/FontHandler.h"
+#include "Handlers/SoundHandler.h"
 
 
 namespace Core
@@ -18,6 +19,16 @@ namespace Core
                              std::shared_ptr<DataAssetRegistrySystem> DataAssetRegistry)
         : AssetRegistry(std::move(AssetRegistry)), DataAssetRegistry(std::move(DataAssetRegistry))
     {
+        RegisterTypeHandlers();
+    }
+
+    AssetLoader::~AssetLoader() = default;
+
+    void AssetLoader::RegisterTypeHandlers()
+    {
+        TypeHandlers[AssetType::Texture] = std::make_unique<TextureHandler>();
+        TypeHandlers[AssetType::Font] = std::make_unique<FontHandler>();
+        TypeHandlers[AssetType::Sound] = std::make_unique<SoundHandler>();
     }
 
     void AssetLoader::QueueTexture(const std::string& Path)
@@ -150,32 +161,12 @@ namespace Core
         {
             if (Result.Success)
             {
-                AssetId Id;
-                switch (Result.Type)
+                auto HandlerIt = TypeHandlers.find(Result.Type);
+                if (HandlerIt != TypeHandlers.end())
                 {
-                case AssetType::Texture:
-                    Id = AssetRegistry->Store<sf::Texture>(
-                        std::static_pointer_cast<sf::Texture>(Result.Data),
-                        Result.Path
-                    );
-                    break;
-                case AssetType::Font:
-                    Id = AssetRegistry->Store<sf::Font>(
-                        std::static_pointer_cast<sf::Font>(Result.Data),
-                        Result.Path
-                    );
-                    break;
-                case AssetType::Sound:
-                    Id = AssetRegistry->Store<sf::SoundBuffer>(
-                        std::static_pointer_cast<sf::SoundBuffer>(Result.Data),
-                        Result.Path
-                    );
-                    break;
-                default:
-                    assert(false);
-                    break;
+                    AssetId Id = HandlerIt->second->Store(Result.Data, Result.Path, *AssetRegistry);
+                    LoadedIds.push_back(Id);
                 }
-                LoadedIds.push_back(Id);
             }
             else
             {
@@ -290,83 +281,36 @@ namespace Core
 
     AssetLoader::LoadedAsset AssetLoader::LoadAsset(const LoadRequest& Request)
     {
+        if (Request.Type == AssetType::Object)
+        {
+            LoadedAsset Result;
+            Result.Type = Request.Type;
+            Result.Path = Request.Path;
+            Result.Success = false;
+
+            if (std::optional<DataAsset> LoadedDataAsset = DataAsset::LoadFromFile(Request.Path))
+            {
+                Result.Data = std::make_shared<DataAsset>(std::move(LoadedDataAsset.value()));
+                Result.Success = true;
+            }
+            else
+            {
+                Result.ErrorMessage = "Failed to load asset";
+            }
+            return Result;
+        }
+
+        auto HandlerIt = TypeHandlers.find(Request.Type);
+        if (HandlerIt != TypeHandlers.end())
+        {
+            return HandlerIt->second->Load(Request);
+        }
+
         LoadedAsset Result;
         Result.Type = Request.Type;
         Result.Path = Request.Path;
         Result.Success = false;
-
-        try
-        {
-            switch (Request.Type)
-            {
-            case AssetType::Texture:
-                {
-                    auto texture = std::make_shared<sf::Texture>();
-                    if (texture->loadFromFile(Request.Path))
-                    {
-                        Result.Data = texture;
-                        Result.Success = true;
-                    }
-                    else
-                    {
-                        Result.ErrorMessage = "Failed to load texture";
-                    }
-                }
-                break;
-
-            case AssetType::Font:
-                {
-                    auto font = std::make_shared<sf::Font>();
-                    if (font->openFromFile(Request.Path))
-                    {
-                        Result.Data = font;
-                        Result.Success = true;
-                    }
-                    else
-                    {
-                        Result.ErrorMessage = "Failed to load font";
-                    }
-                }
-                break;
-
-            case AssetType::Sound:
-                {
-                    auto sound = std::make_shared<sf::SoundBuffer>();
-                    if (sound->loadFromFile(Request.Path))
-                    {
-                        Result.Data = sound;
-                        Result.Success = true;
-                    }
-                    else
-                    {
-                        Result.ErrorMessage = "Failed to load sound";
-                    }
-                }
-                break;
-            case AssetType::Object:
-                {
-                    if (std::optional<DataAsset> LoadedDataAsset = DataAsset::LoadFromFile(Request.Path))
-                    {
-                        Result.Data = std::make_shared<DataAsset>(
-                            std::move(LoadedDataAsset.value()));
-                        Result.Success = true;
-                    }
-                    else
-                    {
-                        Result.ErrorMessage = "Failed to load asset";
-                    }
-                    break;
-                }
-            default:
-                assert(false);
-                break;
-            }
-        }
-        catch (const std::exception& e)
-        {
-            Result.ErrorMessage = e.what();
-        }
-
+        Result.ErrorMessage = "Unknown asset type";
         return Result;
     }
 }
