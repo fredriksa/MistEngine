@@ -2,9 +2,9 @@
 
 #include <cstdio>
 
-#include "Engine.h"
-#include "Systems/AssetRegistrySystem.h"
-#include "Scene/SceneLoader.h"
+#include "../Engine.h"
+#include "../Systems/AssetRegistrySystem.h"
+#include "../Scene/SceneLoader.h"
 
 namespace Core
 {

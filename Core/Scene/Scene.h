@@ -1,16 +1,15 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
 #include <string>
 #include <memory>
 
-#include "EngineContext.hpp"
-#include "World/World.h"
-#include "Interfaces/IRenderable.hpp"
-#include "Interfaces/ITickable.hpp"
-#include "Assets/AssetId.hpp"
-#include "Async/Task.hpp"
+#include "../EngineContext.hpp"
+#include "../World/World.h"
+#include "../Interfaces/IRenderable.hpp"
+#include "../Interfaces/ITickable.hpp"
+#include "../Assets/AssetId.hpp"
+#include "../Async/Task.hpp"
 
 namespace Core
 {

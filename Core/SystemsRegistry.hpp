@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 #include <unordered_map>
@@ -33,7 +33,6 @@ namespace Core
 
     private:
         std::unordered_map<ECoreSystemType, std::shared_ptr<CoreSystem>> SystemToCoreSystem;
-        std::unordered_map<std::string, std::shared_ptr<CoreSystem>> NameToCoreSystem;
         std::vector<std::shared_ptr<CoreSystem>> CoreSystems;
     };
 
@@ -41,8 +40,7 @@ namespace Core
     void SystemsRegistry::Register(const std::shared_ptr<EngineContext>& Context)
     {
         std::shared_ptr<CoreSystem> System = std::make_shared<T>(Context);
-        auto [Iter, Inserted] = NameToCoreSystem.emplace(System->GetName(), System);
         SystemToCoreSystem.emplace(System->GetType(), System);
-        CoreSystems.push_back(Iter->second);
+        CoreSystems.push_back(System);
     }
 }

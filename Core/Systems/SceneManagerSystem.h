@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "CoreSystem.hpp"
-#include "../Scene.h"
+#include "../Scene/Scene.h"
 
 namespace Core
 {

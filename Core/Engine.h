@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <SFML/Graphics/RenderWindow.hpp>
 
-#include "Scene.h"
+#include "Scene/Scene.h"
 #include "SystemsRegistry.hpp"
 #include "Systems/SceneManagerSystem.h"
 
@@ -16,15 +16,9 @@ namespace Core
             requires IsScene<T>
         void SetInitialScene();
 
-        void LoadGlobalAssets();
         void Run();
 
     private:
-        void StartSystems();
-        void TickSystems(float DeltaTimeS);
-        void RenderSystems();
-        void ShutdownSystems();
-
         template <typename Func>
         void ForEachSystem(Func&& Action);
 
