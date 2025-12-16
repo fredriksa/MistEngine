@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "IEngine.hpp"
 #include "SFML/System/Vector2.hpp"
 
 namespace Core
@@ -16,6 +17,7 @@ namespace Core
 {
     struct EngineContext
     {
+        IEngine* Engine;
         sf::Vector2u WindowSize;
         std::shared_ptr<sf::RenderWindow> Window;
         std::shared_ptr<SystemsRegistry> SystemsRegistry;

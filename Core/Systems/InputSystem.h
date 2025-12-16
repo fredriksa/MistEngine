@@ -4,6 +4,8 @@
 
 namespace Core
 {
+    class ImGuiSystem;
+
     class InputSystem : public CoreSystem
     {
     public:
@@ -11,6 +13,10 @@ namespace Core
 
         InputSystem(std::shared_ptr<EngineContext> InContext);
 
+        void Start() override;
         void Tick(float DeltaTimeS) override;
+
+    private:
+        std::shared_ptr<ImGuiSystem> ImGuiSystemPtr;
     };
 }

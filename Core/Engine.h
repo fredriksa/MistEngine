@@ -1,13 +1,14 @@
 ﻿#pragma once
 #include <SFML/Graphics/RenderWindow.hpp>
 
+#include "IEngine.hpp"
 #include "Scene/Scene.h"
 #include "SystemsRegistry.hpp"
 #include "Systems/SceneManagerSystem.h"
 
 namespace Core
 {
-    class Engine
+    class Engine : public IEngine
     {
     public:
         Engine();
@@ -18,6 +19,8 @@ namespace Core
 
         void Run();
 
+        virtual void Shutdown() override;
+
     private:
         template <typename Func>
         void ForEachSystem(Func&& Action);
@@ -25,6 +28,7 @@ namespace Core
     private:
         std::shared_ptr<SystemsRegistry> SystemsRegistry;
         std::shared_ptr<EngineContext> Context;
+        bool bPendingShutdown = false;
     };
 
     template <typename T>

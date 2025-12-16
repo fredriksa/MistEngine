@@ -42,6 +42,10 @@ namespace Core
         {
         }
 
+        virtual void RenderUI()
+        {
+        }
+
     protected:
         std::shared_ptr<EngineContext>& GetContext()
         {

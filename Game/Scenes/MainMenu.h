@@ -10,5 +10,10 @@ namespace Game
 
         virtual void OnLoad() override;
         virtual void PreRender() override;
+        virtual void PostRender() override;
+
+    private:
+        void EnterLevelDesigner();
+        void Shutdown();
     };
 }

@@ -8,6 +8,7 @@ namespace Core
         SceneManagerSystem,
         AssetRegistrySystem,
         DataAssetRegistrySystem,
-        WorldObjectSystem
+        WorldObjectSystem,
+        ImGuiSystem
     };
 }

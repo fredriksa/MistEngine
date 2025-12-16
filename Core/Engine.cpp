@@ -4,12 +4,14 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 #include "EngineContext.hpp"
+#include "imgui-SFML.h"
 #include "Engine/EngineLoader.h"
 #include "Systems/AssetRegistrySystem.h"
 #include "Systems/DataAssetRegistrySystem.h"
 #include "Systems/InputSystem.h"
 #include "Systems/SceneManagerSystem.h"
 #include "Systems/WorldObjectSystem.h"
+#include "Systems/ImGuiSystem.h"
 
 namespace Core
 {
@@ -17,6 +19,7 @@ namespace Core
         : SystemsRegistry(std::make_shared<Core::SystemsRegistry>())
     {
         Context = std::make_shared<EngineContext>();
+        Context->Engine = this;
         Context->WindowSize = sf::Vector2u(1920, 1080);
         Context->Window = std::make_shared<sf::RenderWindow>(sf::VideoMode(Context->WindowSize), "Mist Engine");
         Context->SystemsRegistry = SystemsRegistry;
@@ -26,6 +29,7 @@ namespace Core
         SystemsRegistry->Register<SceneManagerSystem>(Context);
         SystemsRegistry->Register<DataAssetRegistrySystem>(Context);
         SystemsRegistry->Register<WorldObjectSystem>(Context);
+        SystemsRegistry->Register<ImGuiSystem>(Context);
     }
 
     void Engine::Run()
@@ -45,6 +49,10 @@ namespace Core
         FrameClock.start();
 
         const std::shared_ptr<sf::RenderWindow>& Window = Context->Window;
+        if (!ImGui::SFML::Init(*Window))
+        {
+            std::printf("Failed to initialize ImGui\n");
+        }
         while (Window->isOpen())
         {
             float DeltaTimeS = FrameClock.restart().asSeconds();
@@ -61,12 +69,29 @@ namespace Core
                 System->Render();
             });
 
+            ForEachSystem([](const std::shared_ptr<CoreSystem>& System)
+            {
+                System->RenderUI();
+            });
+
             Window->display();
+
+            if (bPendingShutdown)
+            {
+                Window->close();
+            }
         }
 
         ForEachSystem([](const std::shared_ptr<CoreSystem>& System)
         {
             System->Shutdown();
         });
+
+        std::printf("~Engine::Run()\n");
+    }
+
+    void Engine::Shutdown()
+    {
+        bPendingShutdown = true;
     }
 }
