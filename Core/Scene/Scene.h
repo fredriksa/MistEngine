@@ -40,10 +40,18 @@ namespace Core
         {
         }
 
+        virtual void PreRender()
+        {
+        }
+
+        virtual void PostRender()
+        {
+        }
+
     protected:
+        std::shared_ptr<EngineContext> Context;
         std::vector<AssetId> LoadedAssets;
         std::string Name;
-        std::shared_ptr<EngineContext> Context;
         World World;
     };
 

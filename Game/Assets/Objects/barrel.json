@@ -1,0 +1,10 @@
+﻿{
+  "components": [
+    {
+      "type": "SpriteComponent",
+      "data": {
+        "texture": "test"
+      }
+    }
+  ]
+}

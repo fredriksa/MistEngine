@@ -3,13 +3,13 @@
 
 namespace Game::WorldObjects
 {
-    class Barrel : public Core::WorldObject
-    {
-    public:
-        Barrel()
-        {
-            //AddComponent<Render>()
-            //AddComponent<>()
-        }
-    };
+    // class Barrel : public Core::WorldObject
+    // {
+    // public:
+    //     Barrel()
+    //     {
+    //         //AddComponent<Render>()
+    //         //AddComponent<>()
+    //     }
+    // };
 }

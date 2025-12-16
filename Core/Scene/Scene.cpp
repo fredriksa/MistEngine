@@ -26,7 +26,9 @@ namespace Core
 
     void Scene::Render()
     {
+        PreRender();
         World.Render();
+        PostRender();
     }
 
     Task<> Scene::Load()

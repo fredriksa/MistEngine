@@ -4,5 +4,25 @@
       "id": "placeholderSquare",
       "path": "Textures/placeholder.png"
     }
+  ],
+  "objects": [
+    {
+      "type": "barrel",
+      "components": [
+        {
+          "type": "TransformComponent",
+          "data": {
+            "x": 150,
+            "y": 150
+          }
+        },
+        {
+          "type": "SpriteComponent",
+          "data": {
+            "texture": "Game/Assets/Scenes/Textures/placeholder.png"
+          }
+        }
+      ]
+    }
   ]
 }
