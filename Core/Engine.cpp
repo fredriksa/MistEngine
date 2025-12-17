@@ -4,7 +4,6 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 #include "EngineContext.hpp"
-#include "imgui-SFML.h"
 #include "Engine/EngineLoader.h"
 #include "Systems/AssetRegistrySystem.h"
 #include "Systems/DataAssetRegistrySystem.h"
@@ -49,10 +48,6 @@ namespace Core
         FrameClock.start();
 
         const std::shared_ptr<sf::RenderWindow>& Window = Context->Window;
-        if (!ImGui::SFML::Init(*Window))
-        {
-            std::printf("Failed to initialize ImGui\n");
-        }
         while (Window->isOpen())
         {
             float DeltaTimeS = FrameClock.restart().asSeconds();
