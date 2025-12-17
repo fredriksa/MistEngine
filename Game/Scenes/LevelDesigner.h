@@ -16,6 +16,7 @@ namespace Game
     private:
         void ExitToMainMenu();
         void RenderTilePalettePanel();
+        void RenderTilePaletteDivider();
         void RenderCanvasArea();
         void RenderPropertiesPanel();
 

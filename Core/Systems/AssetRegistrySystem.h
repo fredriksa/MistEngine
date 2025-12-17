@@ -5,6 +5,7 @@
 #include "../Assets/AssetId.hpp"
 #include "../Assets/AssetMetadata.h"
 #include "CoreSystem.hpp"
+#include "../Tilemap/TileSheet.h"
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
@@ -35,6 +36,8 @@ namespace Core
 
         void Unload(AssetId Id);
 
+        std::vector<std::shared_ptr<const TileSheet>> GetAllTileSheets() const;
+
     private:
 
         template <typename T>
@@ -46,6 +49,7 @@ namespace Core
         std::unordered_map<AssetId, std::shared_ptr<sf::Texture>> AssetToTexture;
         std::unordered_map<AssetId, std::shared_ptr<sf::Font>> AssetToFont;
         std::unordered_map<AssetId, std::shared_ptr<sf::SoundBuffer>> AssetToSound;
+        std::unordered_map<AssetId, std::shared_ptr<TileSheet>> AssetToTileSheet;
 
         std::unordered_map<AssetId, AssetMetadata> Metadata;
         std::unordered_map<AssetId, int> RefCounts;
@@ -113,6 +117,10 @@ namespace Core
         {
             return &AssetToSound;
         }
+        else if constexpr (std::is_same_v<T, TileSheet>)
+        {
+            return &AssetToTileSheet;
+        }
 
         return nullptr;
     }
@@ -131,6 +139,10 @@ namespace Core
         else if constexpr (std::is_same_v<T, sf::SoundBuffer>)
         {
             return AssetType::Sound;
+        }
+        else if constexpr (std::is_same_v<T, TileSheet>)
+        {
+            return AssetType::TileSheet;
         }
 
         return AssetType::INVALID;

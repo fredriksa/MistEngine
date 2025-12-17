@@ -15,6 +15,9 @@ namespace Core
         void LoadGlobalAssets();
 
     private:
+        void LoadGlobalTileSheets();
+        void CreateTileSheetObjects();
+
         std::shared_ptr<EngineContext> Context;
     };
 }

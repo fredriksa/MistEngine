@@ -9,10 +9,12 @@
 
 namespace Core
 {
+    class AssetRegistrySystem;
+
     class TileSheet
     {
     public:
-        static std::optional<TileSheet> LoadFromFile(const std::string& AbsolutePath);
+        static std::optional<TileSheet> Create(const std::string& Path, AssetRegistrySystem* Registry);
 
         uint GetId() const { return Id; }
         const std::string& GetName() const { return Name; }
@@ -26,6 +28,8 @@ namespace Core
         uint GetTileColumn(uint TileIndex) const;
         uint GetTileRow(uint TileIndex) const;
         uint GetTileCount() const;
+
+        void SetId(uint InId) { Id = InId; }
 
     private:
         uint Id = 0;

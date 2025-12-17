@@ -1,8 +1,10 @@
 ﻿#include "LevelDesigner.h"
 
 #include "imgui.h"
+#include <SFML/Graphics/Sprite.hpp>
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
+#include "../../Systems/AssetRegistrySystem.h"
 
 Game::LevelDesignerScene::LevelDesignerScene(std::shared_ptr<Core::EngineContext> InContext)
     : Scene(std::move(InContext), "LevelDesigner")
@@ -23,7 +25,6 @@ void Game::LevelDesignerScene::PostRender()
 {
     Scene::PostRender();
 
-    // Main Menu Bar
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -68,7 +69,6 @@ void Game::LevelDesignerScene::PostRender()
             ImGui::EndMenu();
         }
 
-        // Back button on far right
         float MenuBarHeight = ImGui::GetWindowSize().y;
         float BackButtonWidth = 80.0f;
         ImGui::SetCursorPosX(ImGui::GetWindowWidth() - BackButtonWidth);
@@ -80,10 +80,8 @@ void Game::LevelDesignerScene::PostRender()
         ImGui::EndMainMenuBar();
     }
 
-    // Get menu bar height for positioning
     float MenuBarHeight = ImGui::GetFrameHeight();
 
-    // Main content area (palette + canvas + properties)
     ImGui::SetNextWindowPos(ImVec2(0, MenuBarHeight));
     ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - MenuBarHeight));
     ImGui::Begin("LevelDesignerContent", nullptr,
@@ -95,17 +93,18 @@ void Game::LevelDesignerScene::PostRender()
     float ContentWidth = ImGui::GetContentRegionAvail().x;
     float ContentHeight = ImGui::GetContentRegionAvail().y;
 
-    // Left: Tile Palette Panel
     RenderTilePalettePanel();
 
     ImGui::SameLine();
 
-    // Middle: Canvas Area
+    RenderTilePaletteDivider();
+
+    ImGui::SameLine();
+
     RenderCanvasArea();
 
     ImGui::SameLine();
 
-    // Right: Properties Panel
     RenderPropertiesPanel();
 
     ImGui::End();
@@ -118,66 +117,125 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     ImGui::BeginChild("TilePalette", ImVec2(TilePalettePanelWidth, ContentHeight), true);
     ImGui::SeparatorText("Tile Palette");
 
-    // Tilesheet selection dropdown
-    const char* TileSheets[] = { "terrain.tilesheet.png", "objects.tilesheet.png", "decorations.tilesheet.png" };
+    std::shared_ptr<Core::AssetRegistrySystem> AssetRegistry = Context->SystemsRegistry->GetCoreSystem<Core::AssetRegistrySystem>();
+    std::vector<std::shared_ptr<const Core::TileSheet>> TileSheets = AssetRegistry->GetAllTileSheets();
+
     ImGui::Text("Tilesheet:");
     ImGui::SetNextItemWidth(-1);
-    ImGui::Combo("##TileSheetSelect", &SelectedTileSheetIndex, TileSheets, IM_ARRAYSIZE(TileSheets));
+
+    if (TileSheets.empty())
+    {
+        ImGui::TextDisabled("No tilesheets loaded");
+    }
+    else
+    {
+        std::string CurrentName = SelectedTileSheetIndex < TileSheets.size()
+            ? TileSheets[SelectedTileSheetIndex]->GetName()
+            : "None";
+
+        if (ImGui::BeginCombo("##TileSheetSelect", CurrentName.c_str()))
+        {
+            for (int i = 0; i < TileSheets.size(); ++i)
+            {
+                bool bIsSelected = (SelectedTileSheetIndex == i);
+                if (ImGui::Selectable(TileSheets[i]->GetName().c_str(), bIsSelected))
+                {
+                    SelectedTileSheetIndex = i;
+                }
+                if (bIsSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
 
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
-    // Tile grid (scrollable)
     ImGui::BeginChild("TileGrid", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    // Placeholder: Show a grid of "tiles" (just colored boxes for preview)
-    const int TilesPerRow = 8;
-    const float TileDisplaySize = 24.0f;
-    const float TilePadding = 4.0f;
-
-    for (int i = 0; i < 64; ++i)  // 64 placeholder tiles
+    if (!TileSheets.empty() && SelectedTileSheetIndex < TileSheets.size())
     {
-        if (i % TilesPerRow != 0)
-            ImGui::SameLine();
+        std::shared_ptr<const Core::TileSheet> SelectedSheet = TileSheets[SelectedTileSheetIndex];
+        std::shared_ptr<const sf::Texture> Texture = SelectedSheet->GetTexture();
 
-        ImGui::PushID(i);
+        const int TilesPerRow = SelectedSheet->GetNumColumns();
+        const float TileDisplaySize = 32.0f;
+        const Core::uint TileCount = SelectedSheet->GetTileCount();
 
-        // Different colors for visual variety
-        ImVec4 TileColor;
-        if (i % 4 == 0) TileColor = ImVec4(0.3f, 0.6f, 0.3f, 1.0f);  // Green
-        else if (i % 4 == 1) TileColor = ImVec4(0.6f, 0.4f, 0.2f, 1.0f);  // Brown
-        else if (i % 4 == 2) TileColor = ImVec4(0.4f, 0.4f, 0.6f, 1.0f);  // Blue
-        else TileColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);  // Gray
+        sf::Vector2u TextureSize = Texture->getSize();
 
-        // Highlight selected tile
-        bool bIsSelected = (SelectedTileIndex == i);
-        if (bIsSelected)
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+        for (Core::uint i = 0; i < TileCount; ++i)
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));  // Yellow highlight
-        }
-        else
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, TileColor);
+            if (i % TilesPerRow != 0)
+                ImGui::SameLine();
+
+            ImGui::PushID(i);
+
+            sf::IntRect TileRect = SelectedSheet->GetTileRect(i);
+
+            sf::Sprite TileSprite(*Texture);
+            TileSprite.setTextureRect(TileRect);
+
+            bool bIsSelected = (SelectedTileIndex == static_cast<int>(i));
+
+            if (ImGui::ImageButton("##Tile", TileSprite, sf::Vector2f(TileDisplaySize, TileDisplaySize)))
+            {
+                SelectedTileIndex = static_cast<int>(i);
+            }
+
+            bool bIsHovered = ImGui::IsItemHovered();
+
+            if (bIsSelected || bIsHovered)
+            {
+                ImVec2 Min = ImGui::GetItemRectMin();
+                ImVec2 Max = ImGui::GetItemRectMax();
+                ImU32 Color = bIsSelected
+                    ? IM_COL32(255, 215, 0, 128)
+                    : IM_COL32(255, 255, 255, 64);
+                ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, Color);
+            }
+
+            ImGui::PopID();
         }
 
-        if (ImGui::Button("##Tile", ImVec2(TileDisplaySize, TileDisplaySize)))
-        {
-            SelectedTileIndex = i;
-        }
-
-        ImGui::PopStyleColor();
-        ImGui::PopID();
+        ImGui::PopStyleVar(2);
+    }
+    else
+    {
+        ImGui::TextDisabled("Select a tilesheet to view tiles");
     }
 
-    ImGui::EndChild();  // TileGrid
-    ImGui::EndChild();  // TilePalette
+    ImGui::EndChild();
+    ImGui::EndChild();
+}
+
+void Game::LevelDesignerScene::RenderTilePaletteDivider()
+{
+    float ContentHeight = ImGui::GetContentRegionAvail().y;
+
+    ImGui::Button("##PaletteDivider", ImVec2(4.0f, ContentHeight));
+    if (ImGui::IsItemActive())
+    {
+        TilePalettePanelWidth += ImGui::GetIO().MouseDelta.x;
+        TilePalettePanelWidth = std::max(200.0f, std::min(TilePalettePanelWidth, 800.0f));
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+    }
 }
 
 void Game::LevelDesignerScene::RenderCanvasArea()
 {
     float ContentHeight = ImGui::GetContentRegionAvail().y;
-    float CanvasWidth = ImGui::GetContentRegionAvail().x - PropertiesPanelWidth - 4.0f;
+    float CanvasWidth = ImGui::GetContentRegionAvail().x - PropertiesPanelWidth - 8.0f;
 
     ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), true);
     ImGui::TextDisabled("Level Editor Canvas");

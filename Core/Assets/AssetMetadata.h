@@ -9,7 +9,8 @@ namespace Core
 		INVALID,
 		Texture,
 		Font,
-		Sound
+		Sound,
+		TileSheet
 	};
 
 	struct AssetMetadata

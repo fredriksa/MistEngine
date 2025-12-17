@@ -1,4 +1,5 @@
 ﻿#include "TileSheet.h"
+#include "../Systems/AssetRegistrySystem.h"
 
 namespace Core
 {
@@ -26,7 +27,7 @@ namespace Core
 
     uint TileSheet::GetTileRow(uint TileIndex) const
     {
-        return TileIndex / Rows;
+        return TileIndex / Columns;
     }
 
     uint TileSheet::GetTileCount() const
@@ -34,21 +35,23 @@ namespace Core
         return Rows * Columns;
     }
 
-    std::optional<TileSheet> TileSheet::LoadFromFile(const std::string& AbsolutePath)
+    std::optional<TileSheet> TileSheet::Create(const std::string& Path, AssetRegistrySystem* Registry)
     {
-        TileSheet Sheet;
-        Sheet.Name = std::filesystem::path(AbsolutePath).stem().string();
-        Sheet.AbsolutePath = AbsolutePath;
-
-        Sheet.Texture = std::make_shared<sf::Texture>();
-        if (!Sheet.Texture->loadFromFile(AbsolutePath))
+        std::shared_ptr<const sf::Texture> Texture = Registry->Get<sf::Texture>(Path);
+        if (!Texture)
         {
             return std::nullopt;
         }
 
+        TileSheet Sheet;
+        Sheet.Name = std::filesystem::path(Path).stem().string();
+        Sheet.AbsolutePath = Path;
+        Sheet.Texture = std::const_pointer_cast<sf::Texture>(Texture);
+
         sf::Vector2u Size = Sheet.Texture->getSize();
-        Sheet.Columns = Size.x / Sheet.Texture->getSize().x;
-        Sheet.Rows = Size.y / Sheet.Texture->getSize().y;
+        Sheet.Columns = Size.x / Sheet.TileDimensions.x;
+        Sheet.Rows = Size.y / Sheet.TileDimensions.y;
+
         return Sheet;
     }
 }

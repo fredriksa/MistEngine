@@ -14,6 +14,7 @@ namespace Core
         AssetToTexture.clear();
         AssetToFont.clear();
         AssetToSound.clear();
+        AssetToTileSheet.clear();
 
         Metadata.clear();
         RefCounts.clear();
@@ -62,6 +63,9 @@ namespace Core
         case AssetType::Sound:
             AssetToSound.erase(Id);
             break;
+        case AssetType::TileSheet:
+            AssetToTileSheet.erase(Id);
+            break;
         }
 
         PathToAssetId.erase(Meta.Path);
@@ -69,5 +73,18 @@ namespace Core
         RefCounts.erase(Id);
 
         std::printf("Unloaded asset: %s\n", Meta.Path.c_str());
+    }
+
+    std::vector<std::shared_ptr<const TileSheet>> AssetRegistrySystem::GetAllTileSheets() const
+    {
+        std::vector<std::shared_ptr<const TileSheet>> Result;
+        Result.reserve(AssetToTileSheet.size());
+
+        for (const auto& [Id, SheetPtr] : AssetToTileSheet)
+        {
+            Result.push_back(SheetPtr);
+        }
+
+        return Result;
     }
 }
