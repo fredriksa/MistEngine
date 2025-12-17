@@ -33,12 +33,24 @@ namespace Core
         return true;
     }
 
+    void SceneManagerSystem::RequestPop()
+    {
+        bPopRequested = true;
+    }
+
     void SceneManagerSystem::Start()
     {
     }
 
     void SceneManagerSystem::Tick(float DeltaTimeS)
     {
+        if (bPopRequested)
+        {
+            bPopRequested = false;
+            Pop();
+            return;
+        }
+
         if (ActiveScene)
         {
             ActiveScene->Tick(DeltaTimeS);

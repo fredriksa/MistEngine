@@ -29,11 +29,23 @@ void Game::LevelDesignerScene::PostRender()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("New Level", "Ctrl+N")) { /* TODO */ }
-            if (ImGui::MenuItem("Open Level...", "Ctrl+O")) { /* TODO */ }
+            if (ImGui::MenuItem("New Level", "Ctrl+N"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Open Level...", "Ctrl+O"))
+            {
+                /* TODO */
+            }
             ImGui::Separator();
-            if (ImGui::MenuItem("Save", "Ctrl+S")) { /* TODO */ }
-            if (ImGui::MenuItem("Save As...")) { /* TODO */ }
+            if (ImGui::MenuItem("Save", "Ctrl+S"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Save As..."))
+            {
+                /* TODO */
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit to Main Menu")) { ExitToMainMenu(); }
             ImGui::EndMenu();
@@ -41,31 +53,67 @@ void Game::LevelDesignerScene::PostRender()
 
         if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Undo", "Ctrl+Z")) { /* TODO */ }
-            if (ImGui::MenuItem("Redo", "Ctrl+Y")) { /* TODO */ }
+            if (ImGui::MenuItem("Undo", "Ctrl+Z"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Redo", "Ctrl+Y"))
+            {
+                /* TODO */
+            }
             ImGui::Separator();
-            if (ImGui::MenuItem("Clear Level")) { /* TODO */ }
+            if (ImGui::MenuItem("Clear Level"))
+            {
+                /* TODO */
+            }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("View"))
         {
-            if (ImGui::MenuItem("Show Grid", "G")) { /* TODO */ }
+            if (ImGui::MenuItem("Show Grid", "G"))
+            {
+                /* TODO */
+            }
             ImGui::Separator();
-            if (ImGui::MenuItem("Zoom In", "+")) { /* TODO */ }
-            if (ImGui::MenuItem("Zoom Out", "-")) { /* TODO */ }
-            if (ImGui::MenuItem("Reset View", "R")) { /* TODO */ }
+            if (ImGui::MenuItem("Zoom In", "+"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Zoom Out", "-"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Reset View", "R"))
+            {
+                /* TODO */
+            }
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Tools"))
         {
-            if (ImGui::MenuItem("Select Tool", "V")) { /* TODO */ }
-            if (ImGui::MenuItem("Paint Tool", "B")) { /* TODO */ }
-            if (ImGui::MenuItem("Fill Tool", "F")) { /* TODO */ }
-            if (ImGui::MenuItem("Eraser Tool", "E")) { /* TODO */ }
+            if (ImGui::MenuItem("Select Tool", "V"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Paint Tool", "B"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Fill Tool", "F"))
+            {
+                /* TODO */
+            }
+            if (ImGui::MenuItem("Eraser Tool", "E"))
+            {
+                /* TODO */
+            }
             ImGui::Separator();
-            if (ImGui::MenuItem("Entity Placer")) { /* TODO */ }
+            if (ImGui::MenuItem("Entity Placer"))
+            {
+                /* TODO */
+            }
             ImGui::EndMenu();
         }
 
@@ -117,7 +165,20 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     ImGui::BeginChild("TilePalette", ImVec2(TilePalettePanelWidth, ContentHeight), true);
     ImGui::SeparatorText("Tile Palette");
 
-    std::shared_ptr<Core::AssetRegistrySystem> AssetRegistry = Context->SystemsRegistry->GetCoreSystem<Core::AssetRegistrySystem>();
+    if (!Context || !Context->SystemsRegistry)
+    {
+        ImGui::EndChild();
+        return;
+    }
+
+    std::shared_ptr<Core::AssetRegistrySystem> AssetRegistry = Context->SystemsRegistry->GetCoreSystem<
+        Core::AssetRegistrySystem>();
+    if (!AssetRegistry)
+    {
+        ImGui::EndChild();
+        return;
+    }
+
     std::vector<std::shared_ptr<const Core::TileSheet>> TileSheets = AssetRegistry->GetAllTileSheets();
 
     ImGui::Text("Tilesheet:");
@@ -130,8 +191,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     else
     {
         std::string CurrentName = SelectedTileSheetIndex < TileSheets.size()
-            ? TileSheets[SelectedTileSheetIndex]->GetName()
-            : "None";
+                                      ? TileSheets[SelectedTileSheetIndex]->GetName()
+                                      : "None";
 
         if (ImGui::BeginCombo("##TileSheetSelect", CurrentName.c_str()))
         {
@@ -159,8 +220,21 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
 
     if (!TileSheets.empty() && SelectedTileSheetIndex < TileSheets.size())
     {
-        std::shared_ptr<const Core::TileSheet> SelectedSheet = TileSheets[SelectedTileSheetIndex];
+        const std::shared_ptr<const Core::TileSheet>& SelectedSheet = TileSheets[SelectedTileSheetIndex];
+        if (!SelectedSheet)
+        {
+            ImGui::EndChild();
+            ImGui::EndChild();
+            return;
+        }
+
         std::shared_ptr<const sf::Texture> Texture = SelectedSheet->GetTexture();
+        if (!Texture)
+        {
+            ImGui::EndChild();
+            ImGui::EndChild();
+            return;
+        }
 
         const int TilesPerRow = SelectedSheet->GetNumColumns();
         const float TileDisplaySize = 32.0f;
@@ -197,8 +271,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
                 ImVec2 Min = ImGui::GetItemRectMin();
                 ImVec2 Max = ImGui::GetItemRectMax();
                 ImU32 Color = bIsSelected
-                    ? IM_COL32(255, 215, 0, 128)
-                    : IM_COL32(255, 255, 255, 64);
+                                  ? IM_COL32(255, 215, 0, 128)
+                                  : IM_COL32(255, 255, 255, 64);
                 ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, Color);
             }
 
@@ -322,5 +396,6 @@ void Game::LevelDesignerScene::RenderPropertiesPanel()
 
 void Game::LevelDesignerScene::ExitToMainMenu()
 {
-    Context->SystemsRegistry->GetCoreSystem<Core::SceneManagerSystem>()->Pop();
+    Context->SystemsRegistry->GetCoreSystem<
+        Core::SceneManagerSystem>()->RequestPop();
 }

@@ -21,6 +21,7 @@ namespace Core
         void Push();
 
         bool Pop();
+        void RequestPop();
 
         virtual void Start() override;
         virtual void Tick(float DeltaTimeS) override;
@@ -29,6 +30,7 @@ namespace Core
     private:
         std::stack<std::shared_ptr<Scene>> Scenes;
         std::shared_ptr<Scene> ActiveScene{nullptr};
+        bool bPopRequested = false;
     };
 
     template <typename T> requires IsScene<T>
