@@ -4,33 +4,61 @@ A modern C++20 game engine built with SFML 3.0, designed for creating top-down 2
 
 ## Overview
 
-Mist Engine is a work-in-progress game engine that emphasizes clean architecture, modern C++ features, and extensibility. The engine uses a systems-based design where all functionality is implemented as discrete, composable systems that interact through a shared context.
+Mist Engine is a data-driven 2D game engine that emphasizes clean architecture, modern C++ features, and extensibility. The engine uses a systems-based design where all functionality is implemented as discrete, composable systems that interact through a shared context.
 
 ## Features
 
-### Engine Core
+### Core Architecture
 
-- **Systems-Based Architecture**: Modular design where engine functionality is implemented as `CoreSystem` subclasses
-- **Scene Management**: Stack-based scene system supporting scene transitions, pushing, and popping
-- **Entity-Component System**: WorldObjects with component composition using modern C++ concepts and type-safe templates
-- **Lifecycle Management**: Standardized Initialize → Start → Tick → Render → Shutdown pipeline
-- **Input Handling**: Event-driven input system built on SFML events
+- **Systems-Based Design**: Modular engine functionality implemented as `CoreSystem` subclasses with standardized lifecycle hooks
+- **Component Composition**: Runtime component attachment using modern C++ concepts and automatic registration via macros
+- **Scene Management**: Stack-based scene system supporting transitions, pushing, and popping for menus and gameplay states
+- **Data-Driven Entities**: JSON-based object definitions with optional DataAsset templates and inline object support
 
-## Design Philosophy
+### Asset Pipeline
 
-**Systems-Based Design**: All engine functionality is implemented as systems that register with the `SystemsRegistry`. Systems receive lifecycle callbacks and have access to `EngineContext`.
+- **Hybrid Loading Strategy**: Global assets (UI, fonts) loaded once; level-specific assets loaded/unloaded per scene
+- **Async Coroutines**: C++20 coroutine-based parallel asset loading with automatic dependency discovery
+- **Manifest System**: Scene manifests define textures, fonts, sounds, and objects with component overrides
+- **Automatic Deduplication**: Smart asset queueing prevents duplicate loads across DataAssets and scene manifests
 
-**Entity-Component Model**: Game entities are `WorldObject` instances that can have `Component` instances attached at runtime. Components provide behavior and rendering logic.
+### TileMap System
 
-**Scene Stack**: Scenes can be pushed onto or popped from a stack, enabling menu overlays, pause screens, and scene transitions.
+- **Component-Based Rendering**: TileMap component with built-in serialization and SFML rendering pipeline integration
+- **TileSheet Support**: Automatic tile atlas parsing with configurable tile dimensions
+- **Editor Integration**: Level designer scene with ImGui-based tile palette and properties panels
+
+### Component System
+
+- **Macro-Based Registration**: Components auto-register via `REGISTER_COMPONENT()` macro
+- **Component Manager**: Dedicated component lifecycle management with type-safe accessors
+- **Built-in Components**: Transform, Sprite, and TileMap components with serialization support
+
+## Architecture Highlights
+
+**Systems Registry**: Central registry manages all engine systems with template-based type-safe access. Systems receive lifecycle callbacks (Initialize → Start → Tick → Render → Shutdown) and share state via `EngineContext`.
+
+**Component Factory**: Components register themselves automatically and are instantiated via factory pattern from JSON data. Component initialization happens through `Initialize(const nlohmann::json& Data)` for data-driven object composition.
+
+**Asset Resolution**: File extension-based automatic type detection (`.png` → Texture, `.ttf` → Font, `.wav` → Sound). Recursive JSON scanning discovers asset dependencies without per-component boilerplate.
+
+**Inline Objects**: Scene manifests can define objects purely from components without requiring DataAsset templates, enabling rapid prototyping and scene-specific entities.
 
 ## Building
 
 ### Prerequisites
 
-- C++20 compatible compiler
-- SFML 3.0 (statically linked)
+- **Compiler**: C++20 compatible (MSVC 14.3+, GCC 10+, Clang 11+)
+- **Graphics**: SFML 3.0 (statically linked)
+- **JSON**: nlohmann/json (header-only, included)
+- **UI**: Dear ImGui with ImGui-SFML (for editor)
+
+### Windows (Visual Studio)
+
+1. Install SFML 3.0 and configure paths in project settings
+2. Open `RPG.vcxproj` in Visual Studio 2022
+3. Build in Debug|x64 configuration
 
 ## Development Status
 
-This project is in active development and serves as a learning platform for game engine architecture. The core systems are functional, and the foundation for a modular, extensible engine is in place.
+This project is in active development as a learning platform for game engine architecture. The core systems are functional, with ongoing work on input handling, camera controls, and level editing tools.
