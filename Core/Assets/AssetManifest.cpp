@@ -79,7 +79,7 @@ namespace Core
                 for (const auto& ObjectJson : Data[ObjectsKey])
                 {
                     Manifest.Objects.push_back({
-                        .Type = ObjectJson["type"],
+                        .Type = ObjectJson.value("type", ""),
                         .Overrides = ObjectJson
                     });
                 }

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "../ThirdParty/json.hpp"
 #include "../Common.h"
 
 namespace Core
@@ -15,6 +16,9 @@ namespace Core
         uint GetTileSheetId() const { return TileSheetId; }
         uint GetTileIndex() const { return TileIndex; }
         bool IsEmpty() const { return TileSheetId == 0; }
+
+        nlohmann::json ToJson() const;
+        static Tile FromJson(const nlohmann::json& Json);
 
     private:
         uint TileSheetId;

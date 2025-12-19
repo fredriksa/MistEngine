@@ -72,4 +72,27 @@ namespace Core
 
         return WorldObj;
     }
+
+    std::shared_ptr<WorldObject> WorldObjectSystem::Create(const nlohmann::json& ObjectData)
+    {
+        std::shared_ptr<WorldObject> WorldObj = std::make_shared<WorldObject>(GetContext());
+
+        if (ObjectData.contains("components") && ObjectData["components"].is_array())
+        {
+            for (const auto& ComponentJson : ObjectData["components"])
+            {
+                std::string ComponentType = ComponentJson["type"].get<std::string>();
+                std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(ComponentType, WorldObj);
+                Component->Initialize(ComponentJson["data"]);
+                WorldObj->Components().Attach(Component);
+            }
+        }
+
+        if (!WorldObj->Components().Get<TransformComponent>())
+        {
+            WorldObj->Components().Add<TransformComponent>();
+        }
+
+        return WorldObj;
+    }
 }

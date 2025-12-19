@@ -15,5 +15,6 @@ namespace Core
 
         WorldObjectSystem(std::shared_ptr<EngineContext> InContext);
         std::shared_ptr<WorldObject> Create(const DataAsset& DataAsset, const nlohmann::json& OverrideValues);
+        std::shared_ptr<WorldObject> Create(const nlohmann::json& ObjectData);
     };
 }

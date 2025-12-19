@@ -19,7 +19,7 @@ namespace Core
         uint GetId() const { return Id; }
         const std::string& GetName() const { return Name; }
         const std::string& GetAbsolutePath() const { return AbsolutePath; }
-        const std::shared_ptr<const sf::Texture>& GetTexture() const { return Texture; }
+        std::shared_ptr<const sf::Texture> GetTexture() const { return Texture; }
         uint GetNumColumns() const { return Columns; }
         uint GetNumRows() const { return Rows; }
         const sf::Vector2u& GetTileDimensions() const { return TileDimensions; }

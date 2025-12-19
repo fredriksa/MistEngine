@@ -23,10 +23,12 @@ namespace Game
         // UI State
         float TilePalettePanelWidth = 250.0f;
         float PropertiesPanelWidth = 300.0f;
+        bool bTilePaletteFloating = false;
+        bool bPropertiesFloating = false;
 
         // Tile Palette State
         int SelectedTileSheetIndex = 0;
-        int SelectedTileIndex = -1;  // -1 = no selection
+        int SelectedTileIndex = -1; // -1 = no selection
 
         // Placeholder property values
         float PlaceholderPosX = 0.0f;

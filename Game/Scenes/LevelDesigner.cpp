@@ -141,33 +141,71 @@ void Game::LevelDesignerScene::PostRender()
     float ContentWidth = ImGui::GetContentRegionAvail().x;
     float ContentHeight = ImGui::GetContentRegionAvail().y;
 
-    RenderTilePalettePanel();
-
-    ImGui::SameLine();
-
-    RenderTilePaletteDivider();
-
-    ImGui::SameLine();
+    if (!bTilePaletteFloating)
+    {
+        RenderTilePalettePanel();
+        ImGui::SameLine();
+        RenderTilePaletteDivider();
+        ImGui::SameLine();
+    }
 
     RenderCanvasArea();
 
-    ImGui::SameLine();
-
-    RenderPropertiesPanel();
+    if (!bPropertiesFloating)
+    {
+        ImGui::SameLine();
+        RenderPropertiesPanel();
+    }
 
     ImGui::End();
+
+    if (bTilePaletteFloating)
+    {
+        RenderTilePalettePanel();
+    }
+
+    if (bPropertiesFloating)
+    {
+        RenderPropertiesPanel();
+    }
 }
 
 void Game::LevelDesignerScene::RenderTilePalettePanel()
 {
-    float ContentHeight = ImGui::GetContentRegionAvail().y;
+    bool bIsFloating = bTilePaletteFloating;
 
-    ImGui::BeginChild("TilePalette", ImVec2(TilePalettePanelWidth, ContentHeight), true);
+    if (bIsFloating)
+    {
+        if (!ImGui::Begin("Tile Palette", &bTilePaletteFloating))
+        {
+            ImGui::End();
+            return;
+        }
+    }
+    else
+    {
+        float ContentHeight = ImGui::GetContentRegionAvail().y;
+        ImGui::BeginChild("TilePalette", ImVec2(TilePalettePanelWidth, ContentHeight), true);
+    }
+
     ImGui::SeparatorText("Tile Palette");
+
+    if (!bIsFloating)
+    {
+        ImGui::SameLine();
+        float ButtonWidth = 60.0f;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ButtonWidth);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+        if (ImGui::SmallButton("Detach"))
+        {
+            bTilePaletteFloating = true;
+        }
+        ImGui::PopStyleVar();
+    }
 
     if (!Context || !Context->SystemsRegistry)
     {
-        ImGui::EndChild();
+        if (bIsFloating) ImGui::End(); else ImGui::EndChild();
         return;
     }
 
@@ -175,7 +213,7 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         Core::AssetRegistrySystem>();
     if (!AssetRegistry)
     {
-        ImGui::EndChild();
+        if (bIsFloating) ImGui::End(); else ImGui::EndChild();
         return;
     }
 
@@ -224,7 +262,7 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         if (!SelectedSheet)
         {
             ImGui::EndChild();
-            ImGui::EndChild();
+            if (bIsFloating) ImGui::End(); else ImGui::EndChild();
             return;
         }
 
@@ -232,7 +270,7 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         if (!Texture)
         {
             ImGui::EndChild();
-            ImGui::EndChild();
+            if (bIsFloating) ImGui::End(); else ImGui::EndChild();
             return;
         }
 
@@ -287,7 +325,7 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     }
 
     ImGui::EndChild();
-    ImGui::EndChild();
+    if (bIsFloating) ImGui::End(); else ImGui::EndChild();
 }
 
 void Game::LevelDesignerScene::RenderTilePaletteDivider()
@@ -309,43 +347,63 @@ void Game::LevelDesignerScene::RenderTilePaletteDivider()
 void Game::LevelDesignerScene::RenderCanvasArea()
 {
     float ContentHeight = ImGui::GetContentRegionAvail().y;
-    float CanvasWidth = ImGui::GetContentRegionAvail().x - PropertiesPanelWidth - 8.0f;
+    float CanvasWidth = ImGui::GetContentRegionAvail().x;
+
+    if (!bPropertiesFloating)
+    {
+        CanvasWidth -= PropertiesPanelWidth + 4.0f;
+    }
 
     ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), true);
-    ImGui::TextDisabled("Level Editor Canvas");
-    ImGui::TextDisabled("(Tilemap will render here)");
-    ImGui::Spacing();
-    ImGui::Spacing();
-    ImGui::TextDisabled("Controls:");
-    ImGui::BulletText("Middle Mouse: Pan");
-    ImGui::BulletText("Mouse Wheel: Zoom");
-    ImGui::BulletText("Left Click: Paint tile");
-    ImGui::BulletText("G: Toggle grid");
-    ImGui::BulletText("B: Paint tool");
-    ImGui::BulletText("E: Eraser tool");
     ImGui::EndChild();
 }
 
 void Game::LevelDesignerScene::RenderPropertiesPanel()
 {
-    float ContentHeight = ImGui::GetContentRegionAvail().y;
+    bool bIsFloating = bPropertiesFloating;
 
-    // Resizable divider
-    ImGui::Button("##Divider", ImVec2(4.0f, ContentHeight));
-    if (ImGui::IsItemActive())
+    if (bIsFloating)
     {
-        PropertiesPanelWidth -= ImGui::GetIO().MouseDelta.x;
-        PropertiesPanelWidth = std::max(200.0f, std::min(PropertiesPanelWidth, 600.0f));
+        if (!ImGui::Begin("Properties", &bPropertiesFloating))
+        {
+            ImGui::End();
+            return;
+        }
     }
-    if (ImGui::IsItemHovered())
+    else
     {
-        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        float ContentHeight = ImGui::GetContentRegionAvail().y;
+
+        ImGui::Button("##Divider", ImVec2(4.0f, ContentHeight));
+        if (ImGui::IsItemActive())
+        {
+            PropertiesPanelWidth -= ImGui::GetIO().MouseDelta.x;
+            PropertiesPanelWidth = std::max(200.0f, std::min(PropertiesPanelWidth, 600.0f));
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        }
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild("Properties", ImVec2(PropertiesPanelWidth - 4.0f, ContentHeight), true);
     }
 
-    ImGui::SameLine();
-
-    ImGui::BeginChild("Properties", ImVec2(PropertiesPanelWidth - 4.0f, ContentHeight), true);
     ImGui::SeparatorText("Properties");
+
+    if (!bIsFloating)
+    {
+        ImGui::SameLine();
+        float ButtonWidth = 60.0f;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ButtonWidth);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+        if (ImGui::SmallButton("Detach"))
+        {
+            bPropertiesFloating = true;
+        }
+        ImGui::PopStyleVar();
+    }
 
     // Placeholder content
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Selected Tile: None");
@@ -391,7 +449,7 @@ void Game::LevelDesignerScene::RenderPropertiesPanel()
         // TODO: Remove selected component
     }
 
-    ImGui::EndChild();
+    if (bIsFloating) ImGui::End(); else ImGui::EndChild();
 }
 
 void Game::LevelDesignerScene::ExitToMainMenu()

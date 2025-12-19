@@ -57,7 +57,10 @@ namespace Core
         std::unordered_set<std::string> ObjectsToLoad;
         for (const auto& ObjectEntry : Manifest.Objects)
         {
-            ObjectsToLoad.emplace(ObjectEntry.Type);
+            if (!ObjectEntry.Type.empty())
+            {
+                ObjectsToLoad.emplace(ObjectEntry.Type);
+            }
         }
         for (const std::string& ObjectType : ObjectsToLoad)
         {
@@ -77,7 +80,11 @@ namespace Core
 
         for (const ObjectEntry& Entry : Manifest.Objects)
         {
-            if (const std::shared_ptr<DataAsset>& DataAsset = DataAssetRegistry->Get(Entry.Type))
+            if (Entry.Type.empty())
+            {
+                TargetWorld.Register(WorldObjectSys->Create(Entry.Overrides));
+            }
+            else if (const std::shared_ptr<DataAsset>& DataAsset = DataAssetRegistry->Get(Entry.Type))
             {
                 TargetWorld.Register(WorldObjectSys->Create(*DataAsset, Entry.Overrides));
             }
