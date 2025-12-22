@@ -5,6 +5,7 @@
 #include "../SystemsRegistry.hpp"
 #include "../Systems/AssetRegistrySystem.h"
 #include "../TileMap/TileSheet.h"
+#include "../World/WorldConstants.h"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -60,8 +61,6 @@ namespace Core
             return;
         }
 
-        const float TileDisplaySize = 16.0f;
-
         for (uint Y = 0; Y < TileMapData.GetHeight(); ++Y)
         {
             for (uint X = 0; X < TileMapData.GetWidth(); ++X)
@@ -97,7 +96,7 @@ namespace Core
 
                 sf::Sprite TileSprite(*Texture);
                 TileSprite.setTextureRect(TileRect);
-                TileSprite.setPosition(sf::Vector2f(X * TileDisplaySize, Y * TileDisplaySize));
+                TileSprite.setPosition(sf::Vector2f(X * WorldConstants::TileSize, Y * WorldConstants::TileSize));
 
                 Context.Window->draw(TileSprite);
             }

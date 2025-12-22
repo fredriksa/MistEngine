@@ -26,6 +26,8 @@ namespace Game
         void RenderCanvasArea();
         void RenderPropertiesPanel();
 
+        sf::FloatRect CalculateCanvasRect() const;
+
         // UI State
         float TilePalettePanelWidth = 250.0f;
         float PropertiesPanelWidth = 300.0f;

@@ -6,7 +6,7 @@ namespace Core
         : Width(Width)
           , Height(Height)
     {
-        Tiles.resize(Width * Height, Tile(0, 0));
+        Tiles.resize(Width * Height, Tile());
     }
 
     void TileMap::SetTile(uint X, uint Y, uint TileSheetId, uint TileIndex)
@@ -31,7 +31,7 @@ namespace Core
 
     const Tile& TileMap::GetTile(uint X, uint Y) const
     {
-        static const Tile EmptyTile(0, 0);
+        static const Tile EmptyTile;
 
         if (!IsValidCoordinate(X, Y))
         {
@@ -43,7 +43,7 @@ namespace Core
 
     Tile& TileMap::GetTile(uint X, uint Y)
     {
-        static Tile EmptyTile(0, 0);
+        static Tile EmptyTile;
 
         if (!IsValidCoordinate(X, Y))
         {
@@ -57,7 +57,7 @@ namespace Core
     {
         for (Tile& tile : Tiles)
         {
-            tile = Tile(0, 0);
+            tile = Tile();
         }
     }
 

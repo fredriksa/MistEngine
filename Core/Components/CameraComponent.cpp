@@ -31,7 +31,12 @@ namespace Core
     {
         sf::View View;
 
-        View.setCenter(GetOwner()->Transform()->Position);
+        sf::Vector2f RoundedPosition(
+            std::round(GetOwner()->Transform()->Position.x),
+            std::round(GetOwner()->Transform()->Position.y)
+        );
+
+        View.setCenter(RoundedPosition);
         View.setSize(BaseSize * ZoomLevel);
         View.setViewport(Viewport);
 

@@ -8,6 +8,7 @@
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
+#include "../../Core/Editor/EditorConstants.h"
 
 Game::LevelDesignerScene::LevelDesignerScene(std::shared_ptr<Core::EngineContext> InContext)
     : Scene(std::move(InContext), "LevelDesigner")
@@ -22,6 +23,8 @@ void Game::LevelDesignerScene::OnLoad()
 void Game::LevelDesignerScene::PreRender()
 {
     Scene::PreRender();
+
+    CanvasRect = CalculateCanvasRect();
 
     if (std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera"))
     {
@@ -301,7 +304,6 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         }
 
         const int TilesPerRow = SelectedSheet->GetNumColumns();
-        const float TileDisplaySize = 32.0f;
         const Core::uint TileCount = SelectedSheet->GetTileCount();
 
         sf::Vector2u TextureSize = Texture->getSize();
@@ -323,7 +325,7 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
 
             bool bIsSelected = (SelectedTileIndex == static_cast<int>(i));
 
-            if (ImGui::ImageButton("##Tile", TileSprite, sf::Vector2f(TileDisplaySize, TileDisplaySize)))
+            if (ImGui::ImageButton("##Tile", TileSprite, sf::Vector2f(Core::EditorConstants::TilePaletteDisplaySize, Core::EditorConstants::TilePaletteDisplaySize)))
             {
                 SelectedTileIndex = static_cast<int>(i);
             }
@@ -383,11 +385,6 @@ void Game::LevelDesignerScene::RenderCanvasArea()
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), true);
-
-    ImVec2 CanvasMin = ImGui::GetWindowPos();
-    ImVec2 CanvasMax = ImVec2(CanvasMin.x + ImGui::GetWindowSize().x, CanvasMin.y + ImGui::GetWindowSize().y);
-    CanvasRect = sf::FloatRect{{CanvasMin.x, CanvasMin.y}, {CanvasMax.x - CanvasMin.x, CanvasMax.y - CanvasMin.y}};
-
     ImGui::EndChild();
     ImGui::PopStyleColor();
 }
@@ -496,4 +493,20 @@ void Game::LevelDesignerScene::ExitToMainMenu()
 bool Game::LevelDesignerScene::IsClickInCanvas(Core::WindowCoordinate MousePos) const
 {
     return CanvasRect.contains(sf::Vector2f(static_cast<float>(MousePos.X()), static_cast<float>(MousePos.Y())));
+}
+
+sf::FloatRect Game::LevelDesignerScene::CalculateCanvasRect() const
+{
+    float MenuBarHeight = ImGui::GetFrameHeight();
+    float CanvasX = bTilePaletteFloating ? 0.0f : TilePalettePanelWidth + 4.0f;
+    float CanvasY = MenuBarHeight;
+    float CanvasWidth = ImGui::GetIO().DisplaySize.x - CanvasX;
+    float CanvasHeight = ImGui::GetIO().DisplaySize.y - MenuBarHeight;
+
+    if (!bPropertiesFloating)
+    {
+        CanvasWidth -= PropertiesPanelWidth + 4.0f;
+    }
+
+    return sf::FloatRect{{CanvasX, CanvasY}, {CanvasWidth, CanvasHeight}};
 }
