@@ -11,6 +11,7 @@
 #include "Systems/SceneManagerSystem.h"
 #include "Systems/WorldObjectSystem.h"
 #include "Systems/ImGuiSystem.h"
+#include "Systems/CoordinateProjectionSystem.h"
 
 namespace Core
 {
@@ -29,6 +30,7 @@ namespace Core
         SystemsRegistry->Register<DataAssetRegistrySystem>(Context);
         SystemsRegistry->Register<WorldObjectSystem>(Context);
         SystemsRegistry->Register<ImGuiSystem>(Context);
+        SystemsRegistry->Register<CoordinateProjectionSystem>(Context);
     }
 
     void Engine::Run()

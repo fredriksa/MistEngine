@@ -9,6 +9,7 @@ namespace Core
         AssetRegistrySystem,
         DataAssetRegistrySystem,
         WorldObjectSystem,
-        ImGuiSystem
+        ImGuiSystem,
+        CoordinateProjectionSystem
     };
 }

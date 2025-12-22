@@ -23,6 +23,8 @@ namespace Core
         bool Pop();
         void RequestPop();
 
+        std::shared_ptr<Scene> GetActiveScene() const { return ActiveScene; }
+
         virtual void Start() override;
         virtual void Tick(float DeltaTimeS) override;
         virtual void Render() override;

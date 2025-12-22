@@ -7,6 +7,7 @@ namespace Core
 {
     struct DataAsset;
     class WorldObject;
+    class World;
 
     class WorldObjectSystem : public CoreSystem
     {
@@ -14,7 +15,7 @@ namespace Core
         static constexpr ECoreSystemType Type = ECoreSystemType::WorldObjectSystem;
 
         WorldObjectSystem(std::shared_ptr<EngineContext> InContext);
-        std::shared_ptr<WorldObject> Create(const DataAsset& DataAsset, const nlohmann::json& OverrideValues);
-        std::shared_ptr<WorldObject> Create(const nlohmann::json& ObjectData);
+        std::shared_ptr<WorldObject> Create(World* TargetWorld, const DataAsset& DataAsset, const nlohmann::json& OverrideValues);
+        std::shared_ptr<WorldObject> Create(World* TargetWorld, const nlohmann::json& ObjectData);
     };
 }

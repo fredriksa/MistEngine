@@ -2,6 +2,9 @@
 
 #include "imgui.h"
 #include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/OpenGL.hpp>
+#include "../../Components/CameraComponent.h"
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
@@ -19,10 +22,28 @@ void Game::LevelDesignerScene::OnLoad()
 void Game::LevelDesignerScene::PreRender()
 {
     Scene::PreRender();
+
+    if (std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera"))
+    {
+        if (std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>())
+        {
+            Context->Window->setView(Camera->GetView());
+
+            int ScissorX = static_cast<int>(CanvasRect.position.x);
+            int ScissorY = static_cast<int>(Context->WindowSize.y - CanvasRect.position.y - CanvasRect.size.y);
+            int ScissorWidth = static_cast<int>(CanvasRect.size.x);
+            int ScissorHeight = static_cast<int>(CanvasRect.size.y);
+
+            glEnable(GL_SCISSOR_TEST);
+            glScissor(ScissorX, ScissorY, ScissorWidth, ScissorHeight);
+        }
+    }
 }
 
 void Game::LevelDesignerScene::PostRender()
 {
+    glDisable(GL_SCISSOR_TEST);
+
     Scene::PostRender();
 
     if (ImGui::BeginMainMenuBar())
@@ -132,6 +153,7 @@ void Game::LevelDesignerScene::PostRender()
 
     ImGui::SetNextWindowPos(ImVec2(0, MenuBarHeight));
     ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y - MenuBarHeight));
+    ImGui::SetNextWindowBgAlpha(0.0f);
     ImGui::Begin("LevelDesignerContent", nullptr,
                  ImGuiWindowFlags_NoTitleBar |
                  ImGuiWindowFlags_NoResize |
@@ -205,7 +227,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
 
     if (!Context || !Context->SystemsRegistry)
     {
-        if (bIsFloating) ImGui::End(); else ImGui::EndChild();
+        if (bIsFloating) ImGui::End();
+        else ImGui::EndChild();
         return;
     }
 
@@ -213,7 +236,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         Core::AssetRegistrySystem>();
     if (!AssetRegistry)
     {
-        if (bIsFloating) ImGui::End(); else ImGui::EndChild();
+        if (bIsFloating) ImGui::End();
+        else ImGui::EndChild();
         return;
     }
 
@@ -262,7 +286,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         if (!SelectedSheet)
         {
             ImGui::EndChild();
-            if (bIsFloating) ImGui::End(); else ImGui::EndChild();
+            if (bIsFloating) ImGui::End();
+            else ImGui::EndChild();
             return;
         }
 
@@ -270,7 +295,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
         if (!Texture)
         {
             ImGui::EndChild();
-            if (bIsFloating) ImGui::End(); else ImGui::EndChild();
+            if (bIsFloating) ImGui::End();
+            else ImGui::EndChild();
             return;
         }
 
@@ -325,7 +351,8 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     }
 
     ImGui::EndChild();
-    if (bIsFloating) ImGui::End(); else ImGui::EndChild();
+    if (bIsFloating) ImGui::End();
+    else ImGui::EndChild();
 }
 
 void Game::LevelDesignerScene::RenderTilePaletteDivider()
@@ -354,8 +381,15 @@ void Game::LevelDesignerScene::RenderCanvasArea()
         CanvasWidth -= PropertiesPanelWidth + 4.0f;
     }
 
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), true);
+
+    ImVec2 CanvasMin = ImGui::GetWindowPos();
+    ImVec2 CanvasMax = ImVec2(CanvasMin.x + ImGui::GetWindowSize().x, CanvasMin.y + ImGui::GetWindowSize().y);
+    CanvasRect = sf::FloatRect{{CanvasMin.x, CanvasMin.y}, {CanvasMax.x - CanvasMin.x, CanvasMax.y - CanvasMin.y}};
+
     ImGui::EndChild();
+    ImGui::PopStyleColor();
 }
 
 void Game::LevelDesignerScene::RenderPropertiesPanel()
@@ -449,11 +483,17 @@ void Game::LevelDesignerScene::RenderPropertiesPanel()
         // TODO: Remove selected component
     }
 
-    if (bIsFloating) ImGui::End(); else ImGui::EndChild();
+    if (bIsFloating) ImGui::End();
+    else ImGui::EndChild();
 }
 
 void Game::LevelDesignerScene::ExitToMainMenu()
 {
     Context->SystemsRegistry->GetCoreSystem<
         Core::SceneManagerSystem>()->RequestPop();
+}
+
+bool Game::LevelDesignerScene::IsClickInCanvas(Core::WindowCoordinate MousePos) const
+{
+    return CanvasRect.contains(sf::Vector2f(static_cast<float>(MousePos.X()), static_cast<float>(MousePos.Y())));
 }

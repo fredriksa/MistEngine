@@ -52,6 +52,11 @@ namespace Core
             return Context;
         }
 
+        const std::shared_ptr<EngineContext>& GetContext() const
+        {
+            return Context;
+        }
+
     private:
         std::string Name;
         ECoreSystemType Type;

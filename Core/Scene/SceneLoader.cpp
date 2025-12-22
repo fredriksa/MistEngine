@@ -80,13 +80,20 @@ namespace Core
 
         for (const ObjectEntry& Entry : Manifest.Objects)
         {
+            std::shared_ptr<WorldObject> CreatedObject;
+
             if (Entry.Type.empty())
             {
-                TargetWorld.Register(WorldObjectSys->Create(Entry.Overrides));
+                CreatedObject = WorldObjectSys->Create(&TargetWorld, Entry.Overrides);
             }
             else if (const std::shared_ptr<DataAsset>& DataAsset = DataAssetRegistry->Get(Entry.Type))
             {
-                TargetWorld.Register(WorldObjectSys->Create(*DataAsset, Entry.Overrides));
+                CreatedObject = WorldObjectSys->Create(&TargetWorld, *DataAsset, Entry.Overrides);
+            }
+
+            if (CreatedObject && Entry.Overrides.contains("name") && Entry.Overrides["name"].is_string())
+            {
+                CreatedObject->SetName(Entry.Overrides["name"].get<std::string>());
             }
         }
     }

@@ -4,6 +4,7 @@
 #include "../Components/ComponentRegistry.h"
 #include "../Components/TransformComponent.h"
 #include "../World/WorldObject.h"
+#include "../World/World.h"
 #include "../Utils/JsonUtils.h"
 
 namespace Core
@@ -13,10 +14,10 @@ namespace Core
     {
     }
 
-    std::shared_ptr<WorldObject> WorldObjectSystem::Create(const DataAsset& DataAsset,
+    std::shared_ptr<WorldObject> WorldObjectSystem::Create(World* TargetWorld, const DataAsset& DataAsset,
                                                            const nlohmann::json& OverrideValues)
     {
-        std::shared_ptr<WorldObject> WorldObj = std::make_shared<WorldObject>(GetContext());
+        std::shared_ptr<WorldObject> WorldObj = TargetWorld->CreateObject();
 
         for (const ComponentData& AssetComponentData : DataAsset.Components)
         {
@@ -73,9 +74,9 @@ namespace Core
         return WorldObj;
     }
 
-    std::shared_ptr<WorldObject> WorldObjectSystem::Create(const nlohmann::json& ObjectData)
+    std::shared_ptr<WorldObject> WorldObjectSystem::Create(World* TargetWorld, const nlohmann::json& ObjectData)
     {
-        std::shared_ptr<WorldObject> WorldObj = std::make_shared<WorldObject>(GetContext());
+        std::shared_ptr<WorldObject> WorldObj = TargetWorld->CreateObject();
 
         if (ObjectData.contains("components") && ObjectData["components"].is_array())
         {

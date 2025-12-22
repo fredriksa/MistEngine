@@ -30,4 +30,12 @@ namespace Core
             Component->Render();
         }
     }
+
+    void ComponentManager::Start()
+    {
+        for (std::shared_ptr<Component>& Component : TypeToComponent | std::views::values)
+        {
+            Component->Start();
+        }
+    }
 }

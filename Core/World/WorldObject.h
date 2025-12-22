@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "ComponentManager.h"
 #include "../Interfaces/IRenderable.hpp"
@@ -10,11 +11,12 @@ namespace Core
 {
     struct EngineContext;
     class TransformComponent;
+    class World;
 
     class WorldObject : public ITickable, public IRenderable, public std::enable_shared_from_this<WorldObject>
     {
     public:
-        WorldObject(std::shared_ptr<EngineContext> Context);
+        WorldObject(std::shared_ptr<EngineContext> Context, World* InWorld);
 
         void Tick(float DeltaTimeS) final;
         void Render() final;
@@ -23,10 +25,16 @@ namespace Core
         TransformComponent* Transform();
 
         const EngineContext& GetContext() const;
+        World* GetWorld() const { return OwningWorld; }
+
+        void SetName(const std::string& InName);
+        const std::string& GetName() const { return Name; }
 
     private:
         std::shared_ptr<EngineContext> Context;
+        World* OwningWorld;
         ComponentManager ComponentsMgr{this};
+        std::string Name;
     };
 
     template <typename T>

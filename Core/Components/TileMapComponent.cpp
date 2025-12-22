@@ -73,12 +73,14 @@ namespace Core
                     continue;
                 }
 
-                if (Tile.GetTileSheetId() >= TileSheets.size())
+                int TileSheetIndex = Tile.GetTileSheetId() - 1;
+
+                if (TileSheetIndex < 0 || TileSheetIndex >= static_cast<int>(TileSheets.size()))
                 {
                     continue;
                 }
 
-                std::shared_ptr<const TileSheet> TileSheet = TileSheets[Tile.GetTileSheetId()];
+                std::shared_ptr<const TileSheet> TileSheet = TileSheets[TileSheetIndex];
                 if (!TileSheet)
                 {
                     continue;

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <SFML/Graphics/Rect.hpp>
+#include "../../Core/Coordinates/WindowCoordinate.h"
 #include "../../Scene/Scene.h"
 
 namespace Game
@@ -12,6 +14,10 @@ namespace Game
         virtual void OnLoad() override;
         virtual void PreRender() override;
         virtual void PostRender() override;
+
+        bool IsClickInCanvas(Core::WindowCoordinate MousePos) const;
+        int GetSelectedTileSheetIndex() const { return SelectedTileSheetIndex; }
+        int GetSelectedTileIndex() const { return SelectedTileIndex; }
 
     private:
         void ExitToMainMenu();
@@ -30,11 +36,12 @@ namespace Game
         int SelectedTileSheetIndex = 0;
         int SelectedTileIndex = -1; // -1 = no selection
 
-        // Placeholder property values
         float PlaceholderPosX = 0.0f;
         float PlaceholderPosY = 0.0f;
         float PlaceholderRotation = 0.0f;
         float PlaceholderScaleX = 1.0f;
         float PlaceholderScaleY = 1.0f;
+
+        mutable sf::FloatRect CanvasRect{{0.0f, 0.0f}, {0.0f, 0.0f}};
     };
 }

@@ -30,6 +30,10 @@ namespace Core
             return true;
         }
 
+        virtual void Start()
+        {
+        }
+
         template <typename T>
             requires IsComponent<T>
         T* GetComponent()
@@ -45,7 +49,7 @@ namespace Core
         }
 
     protected:
-        const EngineContext& GetContext() { return GetOwner()->GetContext(); }
+        const EngineContext& GetContext() const { return GetOwner()->GetContext(); }
 
     private:
         std::weak_ptr<WorldObject> OwnerWeak;

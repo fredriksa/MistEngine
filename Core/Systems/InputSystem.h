@@ -1,10 +1,13 @@
 ﻿#pragma once
 
 #include "CoreSystem.hpp"
+#include <vector>
+#include <memory>
 
 namespace Core
 {
     class ImGuiSystem;
+    class Controller;
 
     class InputSystem : public CoreSystem
     {
@@ -16,7 +19,11 @@ namespace Core
         void Start() override;
         void Tick(float DeltaTimeS) override;
 
+        void RegisterController(Controller* InController);
+        void UnregisterController(Controller* InController);
+
     private:
         std::shared_ptr<ImGuiSystem> ImGuiSystemPtr;
+        std::vector<Controller*> Controllers;
     };
 }
