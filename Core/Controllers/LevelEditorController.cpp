@@ -67,7 +67,7 @@ namespace Game
             if (TileSheetId < 0 || TileIndex < 0)
                 return;
 
-            TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), Core::Tile(TileSheetId + 1, TileIndex));
+            TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), Core::Tile(TileSheetId, TileIndex));
         }
         else if (Event.button == sf::Mouse::Button::Middle)
         {

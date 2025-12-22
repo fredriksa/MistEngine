@@ -2,26 +2,29 @@
 
 #include "../ThirdParty/json.hpp"
 #include "../Common.h"
+#include <optional>
 
 namespace Core
 {
     class Tile
     {
     public:
+        Tile() = default;
+
         Tile(uint TileSheetId, uint TileIndex)
             : TileSheetId(TileSheetId), TileIndex(TileIndex)
         {
         }
 
-        uint GetTileSheetId() const { return TileSheetId; }
+        std::optional<uint> GetTileSheetId() const { return TileSheetId; }
         uint GetTileIndex() const { return TileIndex; }
-        bool IsEmpty() const { return TileSheetId == 0; }
+        bool IsEmpty() const { return !TileSheetId.has_value(); }
 
         nlohmann::json ToJson() const;
         static Tile FromJson(const nlohmann::json& Json);
 
     private:
-        uint TileSheetId;
-        uint TileIndex;
+        std::optional<uint> TileSheetId;
+        uint TileIndex = 0;
     };
 }

@@ -73,9 +73,10 @@ namespace Core
                     continue;
                 }
 
-                int TileSheetIndex = Tile.GetTileSheetId() - 1;
+                std::optional<uint> TileSheetId = Tile.GetTileSheetId();
+                uint TileSheetIndex = TileSheetId.value();
 
-                if (TileSheetIndex < 0 || TileSheetIndex >= static_cast<int>(TileSheets.size()))
+                if (TileSheetIndex >= TileSheets.size())
                 {
                     continue;
                 }
