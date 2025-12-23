@@ -40,6 +40,10 @@ namespace Game
         const TileSelection& GetCurrentSelection() const { return CurrentSelection; }
         int GetTileSheetColumns(int TileSheetIndex) const;
         Core::uint GetCurrentLayer() const { return CurrentLayer; }
+        void ToggleGrid() { bShowGrid = !bShowGrid; }
+        void ZoomIn();
+        void ZoomOut();
+        void ResetView();
 
     private:
         void ExitToMainMenu();
@@ -51,6 +55,7 @@ namespace Game
         void RenderPropertiesPanel();
         void RenderSceneHierarchy();
         void RenderObjectProperties();
+        void DrawSceneGrid();
 
         sf::FloatRect CalculateCanvasRect() const;
         void OnTileSheetChanged(int NewTileSheetIndex);
@@ -61,6 +66,7 @@ namespace Game
         bool bTilePaletteFloating = false;
         bool bPropertiesFloating = false;
         bool bLayersPanelOpen = false;
+        bool bShowGrid = true;
         Core::uint CurrentLayer = 0;
         std::weak_ptr<Core::WorldObject> SelectedObject;
 

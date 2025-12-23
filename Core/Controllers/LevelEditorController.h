@@ -25,6 +25,7 @@ namespace Game
         void OnMouseButtonReleased(const sf::Event::MouseButtonReleased& Event) override;
         void OnMouseMoved(const sf::Event::MouseMoved& Event) override;
         void OnMouseWheelScrolled(const sf::Event::MouseWheelScrolled& Event) override;
+        void OnKeyPressed(const sf::Event::KeyPressed& Event) override;
 
     private:
         std::weak_ptr<Core::CameraComponent> Camera;
@@ -33,5 +34,8 @@ namespace Game
 
         bool bIsPanning = false;
         Core::WorldCoordinate LastPanWorldPos;
+
+        sf::Vector2f InitialCameraPosition{0.0f, 0.0f};
+        float InitialZoom = 0.25f;
     };
 }

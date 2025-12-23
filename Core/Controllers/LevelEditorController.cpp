@@ -28,6 +28,16 @@ namespace Game
     {
         Camera = GetOwner()->Components().Get<Core::CameraComponent>();
 
+        if (std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock())
+        {
+            CamPtr->SetZoom(InitialZoom);
+        }
+
+        if (GetOwner()->Transform())
+        {
+            InitialCameraPosition = GetOwner()->Transform()->Position;
+        }
+
         if (std::shared_ptr<Core::WorldObject> TileMapObject = GetOwner()->GetWorld()->GetObjectByName("TileMap"))
         {
             TileMap = TileMapObject->Components().Get<Core::TileMapComponent>();
@@ -160,5 +170,50 @@ namespace Game
         Core::WorldCoordinate Delta = WorldPosBeforeZoom - WorldPosAfterZoom;
 
         GetOwner()->Transform()->Position += Delta.Value;
+    }
+
+    void LevelEditorController::OnKeyPressed(const sf::Event::KeyPressed& Event)
+    {
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
+        std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
+
+        if (!ScenePtr)
+            return;
+
+        if (Event.code == sf::Keyboard::Key::G)
+        {
+            ScenePtr->ToggleGrid();
+        }
+        else if (Event.code == sf::Keyboard::Key::Equal)
+        {
+            if (CamPtr)
+            {
+                float CurrentZoom = CamPtr->GetZoom();
+                float NewZoom = CurrentZoom * 0.9f;
+                NewZoom = std::clamp(NewZoom, 0.25f, 4.0f);
+                CamPtr->SetZoom(NewZoom);
+            }
+        }
+        else if (Event.code == sf::Keyboard::Key::Hyphen)
+        {
+            if (CamPtr)
+            {
+                float CurrentZoom = CamPtr->GetZoom();
+                float NewZoom = CurrentZoom * 1.1f;
+                NewZoom = std::clamp(NewZoom, 0.25f, 4.0f);
+                CamPtr->SetZoom(NewZoom);
+            }
+        }
+        else if (Event.code == sf::Keyboard::Key::R)
+        {
+            if (CamPtr)
+            {
+                CamPtr->SetZoom(InitialZoom);
+            }
+            if (GetOwner()->Transform())
+            {
+                GetOwner()->Transform()->Position = InitialCameraPosition;
+            }
+        }
     }
 }

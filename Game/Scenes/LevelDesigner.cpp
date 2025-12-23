@@ -1,12 +1,15 @@
 ﻿#include "LevelDesigner.h"
 
 #include "imgui.h"
+#include <cmath>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/OpenGL.hpp>
 #include <unordered_map>
 #include "../../Components/CameraComponent.h"
 #include "../../Components/TileMapComponent.h"
+#include "../../Components/TransformComponent.h"
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
@@ -53,6 +56,8 @@ namespace Game
 
 void LevelDesignerScene::PostRender()
 {
+    DrawSceneGrid();
+
     glDisable(GL_SCISSOR_TEST);
 
     Scene::PostRender();
@@ -103,22 +108,22 @@ void LevelDesignerScene::PostRender()
 
         if (ImGui::BeginMenu("View"))
         {
-            if (ImGui::MenuItem("Show Grid", "G"))
+            if (ImGui::MenuItem("Show Grid", "G", bShowGrid))
             {
-                /* TODO */
+                bShowGrid = !bShowGrid;
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Zoom In", "+"))
             {
-                /* TODO */
+                ZoomIn();
             }
             if (ImGui::MenuItem("Zoom Out", "-"))
             {
-                /* TODO */
+                ZoomOut();
             }
             if (ImGui::MenuItem("Reset View", "R"))
             {
-                /* TODO */
+                ResetView();
             }
             ImGui::EndMenu();
         }
@@ -768,5 +773,103 @@ void LevelDesignerScene::OnTileSheetChanged(int NewTileSheetIndex)
 {
     CurrentTileSheetIndex = NewTileSheetIndex;
     CurrentSelection = TileSelection();
+}
+
+void LevelDesignerScene::ZoomIn()
+{
+    std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+    if (!CameraObject)
+        return;
+
+    std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>();
+    if (!Camera)
+        return;
+
+    float CurrentZoom = Camera->GetZoom();
+    float NewZoom = CurrentZoom * 0.9f;
+    NewZoom = std::clamp(NewZoom, 0.25f, 4.0f);
+    Camera->SetZoom(NewZoom);
+}
+
+void LevelDesignerScene::ZoomOut()
+{
+    std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+    if (!CameraObject)
+        return;
+
+    std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>();
+    if (!Camera)
+        return;
+
+    float CurrentZoom = Camera->GetZoom();
+    float NewZoom = CurrentZoom * 1.1f;
+    NewZoom = std::clamp(NewZoom, 0.25f, 4.0f);
+    Camera->SetZoom(NewZoom);
+}
+
+void LevelDesignerScene::ResetView()
+{
+    std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+    if (!CameraObject)
+        return;
+
+    std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>();
+    if (!Camera)
+        return;
+
+    Camera->SetZoom(0.25f);
+    if (CameraObject->Transform())
+    {
+        CameraObject->Transform()->Position = sf::Vector2f(0.0f, 0.0f);
+    }
+}
+
+void LevelDesignerScene::DrawSceneGrid()
+{
+    if (!bShowGrid)
+        return;
+
+    std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+    if (!CameraObject)
+        return;
+
+    std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>();
+    if (!Camera)
+        return;
+
+    sf::View View = Camera->GetView();
+    sf::Vector2f ViewCenter = View.getCenter();
+    sf::Vector2f ViewSize = View.getSize();
+
+    float Left = ViewCenter.x - ViewSize.x / 2.0f;
+    float Right = ViewCenter.x + ViewSize.x / 2.0f;
+    float Top = ViewCenter.y - ViewSize.y / 2.0f;
+    float Bottom = ViewCenter.y + ViewSize.y / 2.0f;
+
+    const float GridSize = 16.0f;
+
+    int StartX = static_cast<int>(std::floor(Left / GridSize));
+    int EndX = static_cast<int>(std::ceil(Right / GridSize));
+    int StartY = static_cast<int>(std::floor(Top / GridSize));
+    int EndY = static_cast<int>(std::ceil(Bottom / GridSize));
+
+    sf::VertexArray Lines(sf::PrimitiveType::Lines);
+    sf::Color GridColor(200, 200, 200, 80);
+
+    for (int x = StartX; x <= EndX; ++x)
+    {
+        float XPos = x * GridSize;
+        Lines.append(sf::Vertex(sf::Vector2f(XPos, Top), GridColor));
+        Lines.append(sf::Vertex(sf::Vector2f(XPos, Bottom), GridColor));
+    }
+
+    for (int y = StartY; y <= EndY; ++y)
+    {
+        float YPos = y * GridSize;
+        Lines.append(sf::Vertex(sf::Vector2f(Left, YPos), GridColor));
+        Lines.append(sf::Vertex(sf::Vector2f(Right, YPos), GridColor));
+    }
+
+    Context->Window->draw(Lines);
 }
 }
