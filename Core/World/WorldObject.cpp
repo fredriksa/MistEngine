@@ -64,4 +64,32 @@ namespace Core
         }
         return WorldCoordinate(LocalPos.Value.x + ObjectPosition.x, LocalPos.Value.y + ObjectPosition.y);
     }
+
+    nlohmann::json WorldObject::ToJson() const
+    {
+        nlohmann::json ObjectJson;
+
+        if (!Name.empty())
+        {
+            ObjectJson["name"] = Name;
+        }
+
+        nlohmann::json ComponentsArray = nlohmann::json::array();
+
+        for (const auto& [TypeIndex, ComponentPtr] : ComponentsMgr.GetAll())
+        {
+            if (!ComponentPtr)
+                continue;
+
+            nlohmann::json ComponentJson;
+            ComponentJson["type"] = ComponentPtr->GetName();
+            ComponentJson["data"] = ComponentPtr->ToJson();
+
+            ComponentsArray.push_back(ComponentJson);
+        }
+
+        ObjectJson["components"] = ComponentsArray;
+
+        return ObjectJson;
+    }
 }

@@ -7,7 +7,12 @@ namespace Core
 {
     REGISTER_COMPONENT_EDITOR(TransformComponent, TransformComponentEditor);
 
-    void TransformComponentEditor::RenderEditor(Component* InComponent)
+    std::string TransformComponentEditor::GetComponentName() const
+    {
+        return "Transform Component";
+    }
+
+    void TransformComponentEditor::RenderContent(Component* InComponent)
     {
         TransformComponent* Transform = dynamic_cast<TransformComponent*>(InComponent);
         if (!Transform)
@@ -15,11 +20,8 @@ namespace Core
             return;
         }
 
-        if (ImGui::CollapsingHeader("Transform Component", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            ImGui::Text("Position");
-            ImGui::InputFloat("X##TransformPos", &Transform->Position.x);
-            ImGui::InputFloat("Y##TransformPos", &Transform->Position.y);
-        }
+        ImGui::Text("Position");
+        ImGui::InputFloat("X##TransformPos", &Transform->Position.x);
+        ImGui::InputFloat("Y##TransformPos", &Transform->Position.y);
     }
 }

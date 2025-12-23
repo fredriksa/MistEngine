@@ -7,7 +7,7 @@ namespace Core
     REGISTER_COMPONENT(TransformComponent);
 
     TransformComponent::TransformComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context)
-        : Component(Owner, std::move(Context))
+        : Component(Owner, std::move(Context), "TransformComponent")
     {
     }
 

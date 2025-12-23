@@ -16,7 +16,7 @@ namespace Core
 
     TileMapComponent::TileMapComponent(const std::shared_ptr<WorldObject>& Owner,
                                        std::shared_ptr<EngineContext> Context)
-        : Component(Owner, std::move(Context))
+        : Component(Owner, std::move(Context), "TileMapComponent")
     {
     }
 
@@ -76,6 +76,12 @@ namespace Core
 
         UpdateLayerVisibility();
         return true;
+    }
+
+    void TileMapComponent::SetSize(uint Width, uint Height)
+    {
+        TileMapData = TileMap(Width, Height);
+        UpdateLayerVisibility();
     }
 
     void TileMapComponent::UpdateLayerVisibility()

@@ -30,6 +30,8 @@ namespace Core
             requires IsComponent<T>
         bool Remove();
 
+        bool Remove(Component* Comp);
+
         const std::unordered_map<std::type_index, std::shared_ptr<Component>>& GetAll() const { return TypeToComponent; }
 
         void Tick(float DeltaTimeS);

@@ -30,4 +30,17 @@ namespace Core
         std::printf("Warning: Unknown component type '%s'\n", Name.c_str());
         return nullptr;
     }
+
+    std::vector<std::string> ComponentRegistry::GetRegisteredTypeNames() const
+    {
+        std::vector<std::string> TypeNames;
+        TypeNames.reserve(Factories.size());
+
+        for (const auto& Pair : Factories)
+        {
+            TypeNames.push_back(Pair.first);
+        }
+
+        return TypeNames;
+    }
 }

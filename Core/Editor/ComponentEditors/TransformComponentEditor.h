@@ -1,12 +1,13 @@
 #pragma once
 
-#include "../IComponentEditor.h"
+#include "../ComponentEditorBase.h"
 
 namespace Core
 {
-    class TransformComponentEditor : public IComponentEditor
+    class TransformComponentEditor : public ComponentEditorBase
     {
-    public:
-        void RenderEditor(Component* InComponent) override;
+    protected:
+        std::string GetComponentName() const override;
+        void RenderContent(Component* InComponent) override;
     };
 }

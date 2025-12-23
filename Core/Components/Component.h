@@ -13,7 +13,7 @@ namespace Core
     class Component : public ITickable, public IRenderable
     {
     public:
-        Component(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context);
+        Component(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context, const std::string& TypeName);
 
         WorldObject* GetOwner() const;
 
@@ -38,6 +38,13 @@ namespace Core
         {
         }
 
+        virtual nlohmann::json ToJson() const
+        {
+            return nlohmann::json::object();
+        }
+
+        const std::string& GetName() const { return Name; }
+
         template <typename T>
             requires IsComponent<T>
         T* GetComponent()
@@ -58,5 +65,6 @@ namespace Core
     private:
         std::weak_ptr<WorldObject> OwnerWeak;
         std::shared_ptr<EngineContext> Context;
+        std::string Name;
     };
 }

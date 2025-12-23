@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include "../Thirdparty/json.hpp"
 
 #include "ComponentManager.h"
 #include "../Interfaces/IRenderable.hpp"
@@ -13,6 +14,13 @@ namespace Core
     struct EngineContext;
     class TransformComponent;
     class World;
+
+    enum class ObjectTag
+    {
+        Game,      // Serialized - part of saved level
+        Editor,    // Not serialized - editor infrastructure
+        Runtime    // Not serialized - temporary runtime objects
+    };
 
     class WorldObject : public ITickable, public IRenderable, public std::enable_shared_from_this<WorldObject>
     {
@@ -32,14 +40,20 @@ namespace Core
         void SetName(const std::string& InName);
         const std::string& GetName() const { return Name; }
 
+        void SetTag(ObjectTag InTag) { Tag = InTag; }
+        ObjectTag GetTag() const { return Tag; }
+
         WorldCoordinate WorldToLocal(const WorldCoordinate& WorldPos) const;
         WorldCoordinate LocalToWorld(const WorldCoordinate& LocalPos) const;
+
+        nlohmann::json ToJson() const;
 
     private:
         std::shared_ptr<EngineContext> Context;
         World* OwningWorld;
         ComponentManager ComponentsMgr{this};
         std::string Name;
+        ObjectTag Tag = ObjectTag::Game;
     };
 
     template <typename T>

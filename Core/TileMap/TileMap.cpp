@@ -3,10 +3,10 @@
 namespace Core
 {
     TileMap::TileMap(uint Width, uint Height)
-        : Width(Width)
-          , Height(Height)
+        : Width(0)
+          , Height(0)
     {
-        AddLayer();
+        Resize(Width, Height);
     }
 
     void TileMap::SetTile(uint X, uint Y, uint Layer, uint TileSheetId, uint TileIndex)
@@ -119,6 +119,55 @@ namespace Core
         }
 
         return Layers[Layer];
+    }
+
+    void TileMap::Resize(uint NewWidth, uint NewHeight)
+    {
+        if (NewWidth == 0 || NewHeight == 0)
+        {
+            return;
+        }
+
+        if (NewWidth == Width && NewHeight == Height)
+        {
+            return;
+        }
+
+        if (Layers.empty())
+        {
+            Width = NewWidth;
+            Height = NewHeight;
+            AddLayer();
+            return;
+        }
+
+        std::vector<std::vector<Tile>> NewLayers;
+        NewLayers.reserve(Layers.size());
+
+        for (const auto& OldLayer : Layers)
+        {
+            std::vector<Tile> NewLayer;
+            NewLayer.resize(NewWidth * NewHeight, Tile());
+
+            uint CopyWidth = (NewWidth < Width) ? NewWidth : Width;
+            uint CopyHeight = (NewHeight < Height) ? NewHeight : Height;
+
+            for (uint Y = 0; Y < CopyHeight; ++Y)
+            {
+                for (uint X = 0; X < CopyWidth; ++X)
+                {
+                    uint OldIndex = Y * Width + X;
+                    uint NewIndex = Y * NewWidth + X;
+                    NewLayer[NewIndex] = OldLayer[OldIndex];
+                }
+            }
+
+            NewLayers.push_back(std::move(NewLayer));
+        }
+
+        Width = NewWidth;
+        Height = NewHeight;
+        Layers = std::move(NewLayers);
     }
 
     bool TileMap::IsValidCoordinate(uint X, uint Y) const

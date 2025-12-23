@@ -28,6 +28,8 @@ namespace Core
 		uint GetHeight() const { return Height; }
 		const std::vector<Tile>& GetLayerTiles(uint Layer) const;
 
+		void Resize(uint NewWidth, uint NewHeight);
+
 		bool IsValidCoordinate(uint X, uint Y) const;
 		bool IsValidLayer(uint Layer) const;
 

@@ -1,4 +1,5 @@
 ﻿#include "World.h"
+#include <algorithm>
 
 namespace Core
 {
@@ -59,6 +60,30 @@ namespace Core
         NamedObjects.erase(Name);
     }
 
+    bool World::MoveObjectUp(std::shared_ptr<WorldObject> Object)
+    {
+        auto It = std::find(WorldObjects.begin(), WorldObjects.end(), Object);
+        if (It == WorldObjects.end() || It == WorldObjects.begin())
+        {
+            return false;
+        }
+
+        std::iter_swap(It, It - 1);
+        return true;
+    }
+
+    bool World::MoveObjectDown(std::shared_ptr<WorldObject> Object)
+    {
+        auto It = std::find(WorldObjects.begin(), WorldObjects.end(), Object);
+        if (It == WorldObjects.end() || It == WorldObjects.end() - 1)
+        {
+            return false;
+        }
+
+        std::iter_swap(It, It + 1);
+        return true;
+    }
+
     void World::StartNewComponents()
     {
         if (PendingStartObjects.empty())
@@ -70,5 +95,25 @@ namespace Core
         }
 
         PendingStartObjects.clear();
+    }
+
+    nlohmann::json World::ToJson() const
+    {
+        nlohmann::json SceneJson;
+        nlohmann::json ObjectsArray = nlohmann::json::array();
+
+        for (const auto& Obj : WorldObjects)
+        {
+            if (!Obj)
+                continue;
+
+            if (Obj->GetTag() == ObjectTag::Game)
+            {
+                ObjectsArray.push_back(Obj->ToJson());
+            }
+        }
+
+        SceneJson["objects"] = ObjectsArray;
+        return SceneJson;
     }
 }

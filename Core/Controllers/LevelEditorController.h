@@ -28,11 +28,16 @@ namespace Game
         void OnKeyPressed(const sf::Event::KeyPressed& Event) override;
 
     private:
+        void PaintTileAtMousePosition(Core::WindowCoordinate MousePos);
+        void DeleteTileAtMousePosition(Core::WindowCoordinate MousePos);
+
         std::weak_ptr<Core::CameraComponent> Camera;
         std::weak_ptr<LevelDesignerScene> Scene;
         std::weak_ptr<Core::TileMapComponent> TileMap;
 
         bool bIsPanning = false;
+        bool bIsPainting = false;
+        Core::WindowCoordinate LastMousePosition{0, 0};
         Core::WorldCoordinate LastPanWorldPos;
 
         sf::Vector2f InitialCameraPosition{0.0f, 0.0f};

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "Component.h"
 
@@ -20,6 +21,7 @@ namespace Core
 
         void Register(const std::string& Name, FactoryFunc Factory);
         std::shared_ptr<Component> Create(const std::string& Name, const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context);
+        std::vector<std::string> GetRegisteredTypeNames() const;
 
     private:
         ComponentRegistry() = default;

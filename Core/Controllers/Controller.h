@@ -10,7 +10,7 @@ namespace Core
     class Controller : public Component
     {
     public:
-        Controller(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context, InputSource Source);
+        Controller(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context, InputSource Source, const std::string& TypeName);
         ~Controller() override;
 
         void Shutdown() override;

@@ -7,6 +7,11 @@
 #include "../../Core/Coordinates/WindowCoordinate.h"
 #include "../../Scene/Scene.h"
 
+namespace Core
+{
+    class TileMapComponent;
+}
+
 namespace Game
 {
     struct TileSelection
@@ -16,7 +21,7 @@ namespace Game
 
         bool IsValid() const
         {
-            return TileSheetIndex && SelectionRect.HasArea();
+            return TileSheetIndex.has_value() && SelectionRect.HasArea();
         }
 
         int GetTileIndex(sf::Vector2i Offset, int TileSheetColumns) const
@@ -37,15 +42,20 @@ namespace Game
         virtual void PostRender() override;
 
         bool IsClickInCanvas(Core::WindowCoordinate MousePos) const;
-        const TileSelection& GetCurrentSelection() const { return CurrentSelection; }
+        TileSelection GetCurrentSelection() const { return CurrentSelection; }
         int GetTileSheetColumns(int TileSheetIndex) const;
         Core::uint GetCurrentLayer() const { return CurrentLayer; }
         void ToggleGrid() { bShowGrid = !bShowGrid; }
         void ZoomIn();
         void ZoomOut();
         void ResetView();
+        void SaveLevel();
+        void SaveLevelAs(const std::string& LevelName);
+
+        std::shared_ptr<Core::TileMapComponent> GetSelectedTileMap() const;
 
     private:
+        void CreateEditorInfrastructure();
         void ExitToMainMenu();
         void RenderTilePalettePanel();
         void RenderTilePaletteDivider();
@@ -77,12 +87,15 @@ namespace Game
         int DragStartColumn = -1;
         int DragStartRow = -1;
 
-        float PlaceholderPosX = 0.0f;
-        float PlaceholderPosY = 0.0f;
-        float PlaceholderRotation = 0.0f;
-        float PlaceholderScaleX = 1.0f;
-        float PlaceholderScaleY = 1.0f;
-
         mutable sf::FloatRect CanvasRect{{0.0f, 0.0f}, {0.0f, 0.0f}};
+
+        bool bShowSaveAsModal = false;
+        char SaveAsLevelNameBuffer[256] = "";
+        std::string CurrentLevelPath;
+
+        bool bShowAddComponentModal = false;
+        int SelectedComponentTypeIndex = 0;
+
+        std::string EditingObjectName;
     };
 }
