@@ -24,11 +24,13 @@ namespace Core
 
         template <class T>
             requires IsComponent<T>
-        std::shared_ptr<T> Get();
+        std::shared_ptr<T> Get() const;
 
         template <class T>
             requires IsComponent<T>
         bool Remove();
+
+        const std::unordered_map<std::type_index, std::shared_ptr<Component>>& GetAll() const { return TypeToComponent; }
 
         void Tick(float DeltaTimeS);
         void Render();
@@ -41,7 +43,7 @@ namespace Core
     };
 
     template <typename T> requires IsComponent<T>
-    std::shared_ptr<T> ComponentManager::Get()
+    std::shared_ptr<T> ComponentManager::Get() const
     {
         auto it = TypeToComponent.find(std::type_index(typeid(T)));
         if (it != TypeToComponent.end())

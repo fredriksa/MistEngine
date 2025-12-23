@@ -15,10 +15,6 @@ namespace Core
     {
     }
 
-    Scene::~Scene()
-    {
-    }
-
     void Scene::Tick(float DeltaTimeS)
     {
         World.Tick(DeltaTimeS);

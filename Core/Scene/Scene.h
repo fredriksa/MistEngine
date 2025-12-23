@@ -17,7 +17,6 @@ namespace Core
     {
     public:
         Scene(std::shared_ptr<EngineContext> Context, std::string Name);
-        virtual ~Scene();
         const std::string& GetName() { return Name; }
 
         void Tick(float DeltaTimeS) final;

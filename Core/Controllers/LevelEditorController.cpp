@@ -10,6 +10,7 @@
 #include "../Systems/SceneManagerSystem.h"
 #include "../World/WorldObject.h"
 #include "../World/World.h"
+#include "../World/ComponentManager.h"
 #include "../TileMap/Tile.h"
 #include "imgui.h"
 #include <algorithm>
@@ -62,7 +63,9 @@ namespace Game
             if (!ScenePtr->IsClickInCanvas(WindowCoords))
                 return;
 
-            Core::TileCoordinate TileCoords = Projector->WindowToTile(WindowCoords, CamPtr->GetView());
+            Core::WorldCoordinate WorldCoords = Projector->WindowToWorld(WindowCoords, CamPtr->GetView());
+            Core::WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
+            Core::TileCoordinate TileCoords = Projector->WorldToTile(LocalCoords);
 
             if (!TileCoords.IsValid())
                 return;

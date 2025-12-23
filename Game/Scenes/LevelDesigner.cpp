@@ -11,8 +11,10 @@
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
 #include "../../Core/Editor/EditorConstants.h"
+#include "../../Core/Editor/ComponentEditorRegistry.h"
 #include "../../Core/TileMap/TileSheet.h"
 #include "../../Core/TileMap/TileMap.h"
+#include "../../Core/World/ComponentManager.h"
 
 namespace Game
 {
@@ -618,67 +620,104 @@ void LevelDesignerScene::RenderPropertiesPanel()
         ImGui::BeginChild("Properties", ImVec2(PropertiesPanelWidth - 4.0f, ContentHeight), true);
     }
 
-    ImGui::SeparatorText("Properties");
-
-    if (!bIsFloating)
-    {
-        ImGui::SameLine();
-        float ButtonWidth = 60.0f;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - ButtonWidth);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-        if (ImGui::SmallButton("Detach"))
-        {
-            bPropertiesFloating = true;
-        }
-        ImGui::PopStyleVar();
-    }
-
-    // Placeholder content
-    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Selected Tile: None");
-    ImGui::Spacing();
-
-    if (ImGui::CollapsingHeader("Transform Component", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::Text("Position");
-        ImGui::InputFloat("X##Pos", &PlaceholderPosX);
-        ImGui::InputFloat("Y##Pos", &PlaceholderPosY);
-        ImGui::Spacing();
-        ImGui::Text("Rotation");
-        ImGui::SliderFloat("Angle", &PlaceholderRotation, 0.0f, 360.0f);
-        ImGui::Spacing();
-        ImGui::Text("Scale");
-        ImGui::InputFloat("X##Scale", &PlaceholderScaleX);
-        ImGui::InputFloat("Y##Scale", &PlaceholderScaleY);
-    }
-
-    if (ImGui::CollapsingHeader("Sprite Component"))
-    {
-        ImGui::Text("Texture: [None]");
-        if (ImGui::Button("Select Texture..."))
-        {
-            // TODO: Open texture picker
-        }
-        ImGui::Spacing();
-        static bool bVisible = true;
-        ImGui::Checkbox("Visible", &bVisible);
-    }
+    RenderSceneHierarchy();
 
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
+    RenderObjectProperties();
+
+    if (bIsFloating) ImGui::End();
+    else ImGui::EndChild();
+}
+
+void LevelDesignerScene::RenderSceneHierarchy()
+{
+    ImGui::SeparatorText("Scene Hierarchy");
+
+    float HierarchyHeight = ImGui::GetContentRegionAvail().y * 0.4f;
+    ImGui::BeginChild("HierarchyList", ImVec2(0, HierarchyHeight), true);
+
+    const std::vector<std::shared_ptr<Core::WorldObject>>& AllObjects = World.GetAllObjects();
+
+    for (const std::shared_ptr<Core::WorldObject>& Obj : AllObjects)
+    {
+        if (!Obj)
+            continue;
+
+        std::shared_ptr<Core::WorldObject> SelectedPtr = SelectedObject.lock();
+        bool bIsSelected = (SelectedPtr == Obj);
+
+        if (bIsSelected)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+        }
+
+        std::string ObjectName = Obj->GetName().empty() ? "[Unnamed]" : Obj->GetName();
+        if (ImGui::Selectable(ObjectName.c_str(), bIsSelected))
+        {
+            SelectedObject = Obj;
+        }
+
+        if (bIsSelected)
+        {
+            ImGui::PopStyleColor();
+        }
+    }
+
+    ImGui::EndChild();
+}
+
+void LevelDesignerScene::RenderObjectProperties()
+{
+    ImGui::SeparatorText("Properties");
+
+    std::shared_ptr<Core::WorldObject> SelectedPtr = SelectedObject.lock();
+
+    if (!SelectedPtr)
+    {
+        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No object selected");
+        return;
+    }
+
+    ImGui::Text("Object: %s", SelectedPtr->GetName().c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    const auto& AllComponents = SelectedPtr->Components().GetAll();
+
+    for (const auto& ComponentPair : AllComponents)
+    {
+        Core::Component* Comp = ComponentPair.second.get();
+        if (!Comp)
+            continue;
+
+        Core::IComponentEditor* Editor = Core::ComponentEditorRegistry::Get().GetEditor(Comp);
+        if (Editor)
+        {
+            Editor->RenderEditor(Comp);
+        }
+        else
+        {
+            const char* ComponentTypeName = typeid(*Comp).name();
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "No editor for %s", ComponentTypeName);
+        }
+
+        ImGui::Spacing();
+    }
+
+    ImGui::Separator();
+    ImGui::Spacing();
+
     if (ImGui::Button("Add Component", ImVec2(-1, 0)))
     {
-        // TODO: Show component picker
     }
 
     if (ImGui::Button("Remove Component", ImVec2(-1, 0)))
     {
-        // TODO: Remove selected component
     }
-
-    if (bIsFloating) ImGui::End();
-    else ImGui::EndChild();
 }
 
 void LevelDesignerScene::ExitToMainMenu()

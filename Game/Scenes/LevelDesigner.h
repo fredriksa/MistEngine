@@ -49,6 +49,8 @@ namespace Game
         void RenderCanvasToolbar();
         void RenderLayersPanel();
         void RenderPropertiesPanel();
+        void RenderSceneHierarchy();
+        void RenderObjectProperties();
 
         sf::FloatRect CalculateCanvasRect() const;
         void OnTileSheetChanged(int NewTileSheetIndex);
@@ -60,6 +62,7 @@ namespace Game
         bool bPropertiesFloating = false;
         bool bLayersPanelOpen = false;
         Core::uint CurrentLayer = 0;
+        std::weak_ptr<Core::WorldObject> SelectedObject;
 
         // Tile Selection State
         int CurrentTileSheetIndex = 0;

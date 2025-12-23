@@ -27,6 +27,7 @@ namespace Core
         void Register(std::shared_ptr<WorldObject> WorldObject);
 
         std::shared_ptr<WorldObject> GetObjectByName(const std::string& Name) const;
+        const std::vector<std::shared_ptr<WorldObject>>& GetAllObjects() const { return WorldObjects; }
 
         void RegisterObjectName(const std::string& Name, std::shared_ptr<WorldObject> Object);
         void UnregisterObjectName(const std::string& Name);

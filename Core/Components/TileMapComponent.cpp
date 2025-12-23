@@ -1,6 +1,7 @@
 #include "TileMapComponent.h"
 
 #include "ComponentRegistry.h"
+#include "TransformComponent.h"
 #include "../EngineContext.hpp"
 #include "../SystemsRegistry.hpp"
 #include "../Systems/AssetRegistrySystem.h"
@@ -120,6 +121,15 @@ namespace Core
             return;
         }
 
+        sf::Vector2f ObjectPosition(0.0f, 0.0f);
+        if (WorldObject* Owner = GetOwner())
+        {
+            if (std::shared_ptr<TransformComponent> Transform = Owner->Components().Get<TransformComponent>())
+            {
+                ObjectPosition = Transform->Position;
+            }
+        }
+
         for (uint Layer = 0; Layer < TileMapData.GetLayerCount(); ++Layer)
         {
             if (!IsLayerVisible(Layer))
@@ -162,7 +172,9 @@ namespace Core
 
                     sf::Sprite TileSprite(*Texture);
                     TileSprite.setTextureRect(TileRect);
-                    TileSprite.setPosition(sf::Vector2f(X * WorldConstants::TileSize, Y * WorldConstants::TileSize));
+
+                    sf::Vector2f TileLocalPos(X * WorldConstants::TileSize, Y * WorldConstants::TileSize);
+                    TileSprite.setPosition(TileLocalPos + ObjectPosition);
 
                     Context.Window->draw(TileSprite);
                 }

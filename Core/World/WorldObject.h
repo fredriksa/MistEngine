@@ -6,6 +6,7 @@
 #include "ComponentManager.h"
 #include "../Interfaces/IRenderable.hpp"
 #include "../Interfaces/ITickable.hpp"
+#include "../Coordinates/WorldCoordinate.h"
 
 namespace Core
 {
@@ -30,6 +31,9 @@ namespace Core
 
         void SetName(const std::string& InName);
         const std::string& GetName() const { return Name; }
+
+        WorldCoordinate WorldToLocal(const WorldCoordinate& WorldPos) const;
+        WorldCoordinate LocalToWorld(const WorldCoordinate& LocalPos) const;
 
     private:
         std::shared_ptr<EngineContext> Context;

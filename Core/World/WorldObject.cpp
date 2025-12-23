@@ -44,4 +44,24 @@ namespace Core
     {
         return *Context;
     }
+
+    WorldCoordinate WorldObject::WorldToLocal(const WorldCoordinate& WorldPos) const
+    {
+        sf::Vector2f ObjectPosition(0.0f, 0.0f);
+        if (std::shared_ptr<TransformComponent> TransformComp = ComponentsMgr.Get<TransformComponent>())
+        {
+            ObjectPosition = TransformComp->Position;
+        }
+        return WorldCoordinate(WorldPos.Value.x - ObjectPosition.x, WorldPos.Value.y - ObjectPosition.y);
+    }
+
+    WorldCoordinate WorldObject::LocalToWorld(const WorldCoordinate& LocalPos) const
+    {
+        sf::Vector2f ObjectPosition(0.0f, 0.0f);
+        if (std::shared_ptr<TransformComponent> TransformComp = ComponentsMgr.Get<TransformComponent>())
+        {
+            ObjectPosition = TransformComp->Position;
+        }
+        return WorldCoordinate(LocalPos.Value.x + ObjectPosition.x, LocalPos.Value.y + ObjectPosition.y);
+    }
 }
