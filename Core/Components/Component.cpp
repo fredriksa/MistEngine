@@ -4,8 +4,9 @@
 
 namespace Core
 {
-    Component::Component(const std::shared_ptr<WorldObject>& Owner)
+    Component::Component(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context)
         : OwnerWeak(Owner)
+          , Context(std::move(Context))
     {
     }
 

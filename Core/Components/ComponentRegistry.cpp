@@ -18,12 +18,13 @@ namespace Core
     }
 
     std::shared_ptr<Component> ComponentRegistry::Create(const std::string& Name,
-                                                         const std::shared_ptr<WorldObject>& Owner)
+                                                         const std::shared_ptr<WorldObject>& Owner,
+                                                         std::shared_ptr<EngineContext> Context)
     {
         auto It = Factories.find(Name);
         if (It != Factories.end())
         {
-            return It->second(Owner);
+            return It->second(Owner, std::move(Context));
         }
 
         std::printf("Warning: Unknown component type '%s'\n", Name.c_str());

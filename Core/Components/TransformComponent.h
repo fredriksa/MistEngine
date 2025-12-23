@@ -8,7 +8,7 @@ namespace Core
     class TransformComponent : public Component
     {
     public:
-        TransformComponent(const std::shared_ptr<WorldObject>& Owner);
+        TransformComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context);
 
         sf::Vector2f Position{0.0f, 0.0f};
 

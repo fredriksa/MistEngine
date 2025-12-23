@@ -13,8 +13,8 @@ namespace Core
 {
     REGISTER_COMPONENT(TileMapComponent);
 
-    TileMapComponent::TileMapComponent(const std::shared_ptr<WorldObject>& Owner)
-        : Component(Owner)
+    TileMapComponent::TileMapComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context)
+        : Component(Owner, std::move(Context))
     {
     }
 

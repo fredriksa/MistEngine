@@ -10,8 +10,8 @@ namespace Core
 {
     REGISTER_COMPONENT(SpriteComponent);
 
-    SpriteComponent::SpriteComponent(const std::shared_ptr<WorldObject>& Owner)
-        : Component(Owner)
+    SpriteComponent::SpriteComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context)
+        : Component(Owner, std::move(Context))
     {
     }
 

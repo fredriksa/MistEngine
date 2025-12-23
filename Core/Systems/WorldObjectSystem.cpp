@@ -35,7 +35,7 @@ namespace Core
             }
 
             std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(
-                AssetComponentData.Type, WorldObj);
+                AssetComponentData.Type, WorldObj, WorldObj->GetContextPtr());
             Component->Initialize(MergedAssetComponentData);
             WorldObj->Components().Attach(Component);
         }
@@ -59,7 +59,7 @@ namespace Core
                 if (!ExistsInTemplate)
                 {
                     std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(
-                        ComponentType, WorldObj);
+                        ComponentType, WorldObj, WorldObj->GetContextPtr());
                     Component->Initialize(OverrideComp["data"]);
                     WorldObj->Components().Attach(Component);
                 }
@@ -83,7 +83,7 @@ namespace Core
             for (const auto& ComponentJson : ObjectData["components"])
             {
                 std::string ComponentType = ComponentJson["type"].get<std::string>();
-                std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(ComponentType, WorldObj);
+                std::shared_ptr<Component> Component = ComponentRegistry::Get().Create(ComponentType, WorldObj, WorldObj->GetContextPtr());
                 Component->Initialize(ComponentJson["data"]);
                 WorldObj->Components().Attach(Component);
             }

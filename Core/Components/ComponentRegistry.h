@@ -14,12 +14,12 @@ namespace Core
     class ComponentRegistry
     {
     public:
-        using FactoryFunc = std::function<std::shared_ptr<Component>(const std::shared_ptr<WorldObject>&)>;
+        using FactoryFunc = std::function<std::shared_ptr<Component>(const std::shared_ptr<WorldObject>&, std::shared_ptr<EngineContext>)>;
 
         static ComponentRegistry& Get();
 
         void Register(const std::string& Name, FactoryFunc Factory);
-        std::shared_ptr<Component> Create(const std::string& Name, const std::shared_ptr<WorldObject>& Owner);
+        std::shared_ptr<Component> Create(const std::string& Name, const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context);
 
     private:
         ComponentRegistry() = default;
@@ -30,8 +30,8 @@ namespace Core
     namespace { \
         static bool ClassName##_registered = []() { \
             Core::ComponentRegistry::Get().Register(#ClassName, \
-            [](const std::shared_ptr<Core::WorldObject>& Owner) { \
-            return std::make_shared<ClassName>(Owner); \
+            [](const std::shared_ptr<Core::WorldObject>& Owner, std::shared_ptr<Core::EngineContext> Context) { \
+            return std::make_shared<ClassName>(Owner, Context); \
             }); \
         return true; \
         }(); \

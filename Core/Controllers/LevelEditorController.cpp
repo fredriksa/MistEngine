@@ -18,8 +18,8 @@ namespace Game
 {
     REGISTER_COMPONENT(LevelEditorController);
 
-    LevelEditorController::LevelEditorController(const std::shared_ptr<Core::WorldObject>& Owner)
-        : Controller(Owner, Core::InputSource::KeyboardMouse)
+    LevelEditorController::LevelEditorController(const std::shared_ptr<Core::WorldObject>& Owner, std::shared_ptr<Core::EngineContext> Context)
+        : Controller(Owner, std::move(Context), Core::InputSource::KeyboardMouse)
     {
     }
 

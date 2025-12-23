@@ -6,8 +6,8 @@
 
 namespace Core
 {
-    Controller::Controller(const std::shared_ptr<WorldObject>& Owner, InputSource Source)
-        : Component(Owner)
+    Controller::Controller(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context, InputSource Source)
+        : Component(Owner, std::move(Context))
           , AssignedSource(Source)
     {
         if (std::shared_ptr<InputSystem> Input = GetContext().SystemsRegistry->GetCoreSystem<InputSystem>())
@@ -17,6 +17,14 @@ namespace Core
     }
 
     Controller::~Controller()
+    {
+        if (std::shared_ptr<InputSystem> Input = GetContext().SystemsRegistry->GetCoreSystem<InputSystem>())
+        {
+            Input->UnregisterController(this);
+        }
+    }
+
+    void Controller::Shutdown()
     {
         if (std::shared_ptr<InputSystem> Input = GetContext().SystemsRegistry->GetCoreSystem<InputSystem>())
         {

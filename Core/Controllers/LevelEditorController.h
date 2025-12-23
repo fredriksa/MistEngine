@@ -17,7 +17,7 @@ namespace Game
     class LevelEditorController : public Core::Controller
     {
     public:
-        LevelEditorController(const std::shared_ptr<Core::WorldObject>& Owner);
+        LevelEditorController(const std::shared_ptr<Core::WorldObject>& Owner, std::shared_ptr<Core::EngineContext> Context);
 
         void Start() override;
 

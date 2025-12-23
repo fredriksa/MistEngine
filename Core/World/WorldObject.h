@@ -25,6 +25,7 @@ namespace Core
         TransformComponent* Transform();
 
         const EngineContext& GetContext() const;
+        std::shared_ptr<EngineContext> GetContextPtr() const { return Context; }
         World* GetWorld() const { return OwningWorld; }
 
         void SetName(const std::string& InName);
@@ -43,7 +44,7 @@ namespace Core
     template <typename T> requires IsComponent<T>
     T* ComponentManager::Add()
     {
-        std::shared_ptr<T> Component = std::make_shared<T>(Owner->shared_from_this());
+        std::shared_ptr<T> Component = std::make_shared<T>(Owner->shared_from_this(), Owner->GetContextPtr());
         TypeToComponent.emplace(std::type_index(typeid(T)), Component);
         return Component.get();
     }

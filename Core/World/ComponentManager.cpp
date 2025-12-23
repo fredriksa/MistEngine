@@ -38,4 +38,15 @@ namespace Core
             Component->Start();
         }
     }
+
+    void ComponentManager::Shutdown()
+    {
+        for (std::shared_ptr<Component>& Comp : TypeToComponent | std::views::values)
+        {
+            if (Comp)
+            {
+                Comp->Shutdown();
+            }
+        }
+    }
 }

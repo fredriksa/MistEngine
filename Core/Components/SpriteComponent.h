@@ -9,7 +9,7 @@ namespace Core
     class SpriteComponent : public Component
     {
     public:
-        SpriteComponent(const std::shared_ptr<WorldObject>& Owner);
+        SpriteComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context);
 
         bool Initialize(const nlohmann::json& Data) override;
         void Render() override;

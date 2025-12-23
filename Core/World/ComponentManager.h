@@ -33,6 +33,7 @@ namespace Core
         void Tick(float DeltaTimeS);
         void Render();
         void Start();
+        void Shutdown();
 
     private:
         WorldObject* Owner;

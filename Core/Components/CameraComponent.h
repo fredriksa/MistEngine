@@ -8,7 +8,7 @@ namespace Core
     class CameraComponent : public Component
     {
     public:
-        CameraComponent(const std::shared_ptr<WorldObject>& Owner);
+        CameraComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context);
 
         void SetZoom(float Zoom);
         void SetViewport(float Left, float Top, float Width, float Height);
