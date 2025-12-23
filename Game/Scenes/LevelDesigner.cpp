@@ -4,23 +4,27 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/OpenGL.hpp>
+#include <unordered_map>
 #include "../../Components/CameraComponent.h"
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
 #include "../../Core/Editor/EditorConstants.h"
+#include "../../Core/TileMap/TileSheet.h"
 
-Game::LevelDesignerScene::LevelDesignerScene(std::shared_ptr<Core::EngineContext> InContext)
-    : Scene(std::move(InContext), "LevelDesigner")
+namespace Game
 {
-}
+    LevelDesignerScene::LevelDesignerScene(std::shared_ptr<Core::EngineContext> InContext)
+        : Scene(std::move(InContext), "LevelDesigner")
+    {
+    }
 
-void Game::LevelDesignerScene::OnLoad()
-{
-    Scene::OnLoad();
-}
+    void LevelDesignerScene::OnLoad()
+    {
+        Scene::OnLoad();
+    }
 
-void Game::LevelDesignerScene::PreRender()
+    void LevelDesignerScene::PreRender()
 {
     Scene::PreRender();
 
@@ -43,7 +47,7 @@ void Game::LevelDesignerScene::PreRender()
     }
 }
 
-void Game::LevelDesignerScene::PostRender()
+void LevelDesignerScene::PostRender()
 {
     glDisable(GL_SCISSOR_TEST);
 
@@ -195,7 +199,7 @@ void Game::LevelDesignerScene::PostRender()
     }
 }
 
-void Game::LevelDesignerScene::RenderTilePalettePanel()
+void LevelDesignerScene::RenderTilePalettePanel()
 {
     bool bIsFloating = bTilePaletteFloating;
 
@@ -255,18 +259,18 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     }
     else
     {
-        std::string CurrentName = SelectedTileSheetIndex < TileSheets.size()
-                                      ? TileSheets[SelectedTileSheetIndex]->GetName()
+        std::string CurrentName = CurrentTileSheetIndex >= 0 && CurrentTileSheetIndex < static_cast<int>(TileSheets.size())
+                                      ? TileSheets[CurrentTileSheetIndex]->GetName()
                                       : "None";
 
         if (ImGui::BeginCombo("##TileSheetSelect", CurrentName.c_str()))
         {
             for (int i = 0; i < TileSheets.size(); ++i)
             {
-                bool bIsSelected = (SelectedTileSheetIndex == i);
+                bool bIsSelected = (CurrentTileSheetIndex == i);
                 if (ImGui::Selectable(TileSheets[i]->GetName().c_str(), bIsSelected))
                 {
-                    SelectedTileSheetIndex = i;
+                    OnTileSheetChanged(i);
                 }
                 if (bIsSelected)
                 {
@@ -283,9 +287,9 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
 
     ImGui::BeginChild("TileGrid", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    if (!TileSheets.empty() && SelectedTileSheetIndex < TileSheets.size())
+    if (!TileSheets.empty() && CurrentTileSheetIndex >= 0 && CurrentTileSheetIndex < static_cast<int>(TileSheets.size()))
     {
-        const std::shared_ptr<const Core::TileSheet>& SelectedSheet = TileSheets[SelectedTileSheetIndex];
+        const std::shared_ptr<const Core::TileSheet>& SelectedSheet = TileSheets[CurrentTileSheetIndex];
         if (!SelectedSheet)
         {
             ImGui::EndChild();
@@ -308,41 +312,100 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
 
         sf::Vector2u TextureSize = Texture->getSize();
 
+        std::unordered_map<int, Core::ScreenRect> TileScreenRects;
+
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
         for (Core::uint i = 0; i < TileCount; ++i)
         {
-            if (i % TilesPerRow != 0)
+            int Column = i % TilesPerRow;
+            int Row = i / TilesPerRow;
+
+            if (Column != 0)
                 ImGui::SameLine();
 
             ImGui::PushID(i);
 
             sf::IntRect TileRect = SelectedSheet->GetTileRect(i);
-
             sf::Sprite TileSprite(*Texture);
             TileSprite.setTextureRect(TileRect);
 
-            bool bIsSelected = (SelectedTileIndex == static_cast<int>(i));
+            ImVec2 TileScreenPos = ImGui::GetCursorScreenPos();
+            TileScreenRects[i] = Core::ScreenRect(
+                Core::ScreenCoordinate::FromImGui(TileScreenPos),
+                Core::ScreenCoordinate(Core::EditorConstants::TilePaletteDisplaySize, Core::EditorConstants::TilePaletteDisplaySize)
+            );
 
-            if (ImGui::ImageButton("##Tile", TileSprite, sf::Vector2f(Core::EditorConstants::TilePaletteDisplaySize, Core::EditorConstants::TilePaletteDisplaySize)))
-            {
-                SelectedTileIndex = static_cast<int>(i);
-            }
+            ImGui::Image(TileSprite,
+                sf::Vector2f(Core::EditorConstants::TilePaletteDisplaySize, Core::EditorConstants::TilePaletteDisplaySize));
 
             bool bIsHovered = ImGui::IsItemHovered();
 
-            if (bIsSelected || bIsHovered)
+            if (bIsHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                bIsDraggingTileSelection = true;
+                DragStartColumn = Column;
+                DragStartRow = Row;
+                CurrentSelection.TileSheetIndex = CurrentTileSheetIndex;
+                CurrentSelection.SelectionRect = Core::TileRectCoord(
+                    Core::TileCoordinate(Column, Row),
+                    Core::TileCoordinate(1, 1)
+                );
+            }
+
+            if (bIsHovered && bIsDraggingTileSelection)
+            {
+                int MinCol = std::min(DragStartColumn, Column);
+                int MaxCol = std::max(DragStartColumn, Column);
+                int MinRow = std::min(DragStartRow, Row);
+                int MaxRow = std::max(DragStartRow, Row);
+
+                CurrentSelection.SelectionRect = Core::TileRectCoord(
+                    Core::TileCoordinate(MinCol, MinRow),
+                    Core::TileCoordinate(MaxCol - MinCol + 1, MaxRow - MinRow + 1)
+                );
+            }
+
+            if (bIsHovered && !bIsDraggingTileSelection)
             {
                 ImVec2 Min = ImGui::GetItemRectMin();
                 ImVec2 Max = ImGui::GetItemRectMax();
-                ImU32 Color = bIsSelected
-                                  ? IM_COL32(255, 215, 0, 128)
-                                  : IM_COL32(255, 255, 255, 64);
-                ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, Color);
+                ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, IM_COL32(255, 255, 255, 64));
             }
 
             ImGui::PopID();
+        }
+
+        if (bIsDraggingTileSelection && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        {
+            bIsDraggingTileSelection = false;
+        }
+
+        if (CurrentSelection.IsValid() && CurrentSelection.TileSheetIndex == CurrentTileSheetIndex)
+        {
+            for (int y = 0; y < CurrentSelection.SelectionRect.Height(); ++y)
+            {
+                for (int x = 0; x < CurrentSelection.SelectionRect.Width(); ++x)
+                {
+                    int Column = CurrentSelection.SelectionRect.Position.X() + x;
+                    int Row = CurrentSelection.SelectionRect.Position.Y() + y;
+                    int TileIndex = Row * TilesPerRow + Column;
+
+                    if (TileScreenRects.find(TileIndex) != TileScreenRects.end())
+                    {
+                        const Core::ScreenRect& Rect = TileScreenRects[TileIndex];
+                        ImVec2 Min = ImVec2(Rect.Left(), Rect.Top());
+                        ImVec2 Max = ImVec2(Rect.Right(), Rect.Bottom());
+
+                        ImGui::GetWindowDrawList()->AddRect(
+                            Min, Max,
+                            IM_COL32(255, 215, 0, 255),
+                            0.0f, 0, 2.0f
+                        );
+                    }
+                }
+            }
         }
 
         ImGui::PopStyleVar(2);
@@ -357,7 +420,7 @@ void Game::LevelDesignerScene::RenderTilePalettePanel()
     else ImGui::EndChild();
 }
 
-void Game::LevelDesignerScene::RenderTilePaletteDivider()
+void LevelDesignerScene::RenderTilePaletteDivider()
 {
     float ContentHeight = ImGui::GetContentRegionAvail().y;
 
@@ -373,7 +436,7 @@ void Game::LevelDesignerScene::RenderTilePaletteDivider()
     }
 }
 
-void Game::LevelDesignerScene::RenderCanvasArea()
+void LevelDesignerScene::RenderCanvasArea()
 {
     float ContentHeight = ImGui::GetContentRegionAvail().y;
     float CanvasWidth = ImGui::GetContentRegionAvail().x;
@@ -389,7 +452,7 @@ void Game::LevelDesignerScene::RenderCanvasArea()
     ImGui::PopStyleColor();
 }
 
-void Game::LevelDesignerScene::RenderPropertiesPanel()
+void LevelDesignerScene::RenderPropertiesPanel()
 {
     bool bIsFloating = bPropertiesFloating;
 
@@ -484,18 +547,18 @@ void Game::LevelDesignerScene::RenderPropertiesPanel()
     else ImGui::EndChild();
 }
 
-void Game::LevelDesignerScene::ExitToMainMenu()
+void LevelDesignerScene::ExitToMainMenu()
 {
     Context->SystemsRegistry->GetCoreSystem<
         Core::SceneManagerSystem>()->RequestPop();
 }
 
-bool Game::LevelDesignerScene::IsClickInCanvas(Core::WindowCoordinate MousePos) const
+bool LevelDesignerScene::IsClickInCanvas(Core::WindowCoordinate MousePos) const
 {
     return CanvasRect.contains(sf::Vector2f(static_cast<float>(MousePos.X()), static_cast<float>(MousePos.Y())));
 }
 
-sf::FloatRect Game::LevelDesignerScene::CalculateCanvasRect() const
+sf::FloatRect LevelDesignerScene::CalculateCanvasRect() const
 {
     float MenuBarHeight = ImGui::GetFrameHeight();
     float CanvasX = bTilePaletteFloating ? 0.0f : TilePalettePanelWidth + 4.0f;
@@ -509,4 +572,28 @@ sf::FloatRect Game::LevelDesignerScene::CalculateCanvasRect() const
     }
 
     return sf::FloatRect{{CanvasX, CanvasY}, {CanvasWidth, CanvasHeight}};
+}
+
+int LevelDesignerScene::GetTileSheetColumns(int TileSheetIndex) const
+{
+    if (!Context || !Context->SystemsRegistry)
+        return 0;
+
+    std::shared_ptr<Core::AssetRegistrySystem> AssetRegistry =
+        Context->SystemsRegistry->GetCoreSystem<Core::AssetRegistrySystem>();
+    if (!AssetRegistry)
+        return 0;
+
+    std::vector<std::shared_ptr<const Core::TileSheet>> TileSheets = AssetRegistry->GetAllTileSheets();
+    if (TileSheetIndex < 0 || TileSheetIndex >= static_cast<int>(TileSheets.size()))
+        return 0;
+
+    return TileSheets[TileSheetIndex]->GetNumColumns();
+}
+
+void LevelDesignerScene::OnTileSheetChanged(int NewTileSheetIndex)
+{
+    CurrentTileSheetIndex = NewTileSheetIndex;
+    CurrentSelection = TileSelection();
+}
 }

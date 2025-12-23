@@ -1,11 +1,32 @@
 ﻿#pragma once
 
 #include <SFML/Graphics/Rect.hpp>
+
+#include "../../Core/Common.h"
+#include "../../Core/Coordinates/TypedRect.hpp"
 #include "../../Core/Coordinates/WindowCoordinate.h"
 #include "../../Scene/Scene.h"
 
 namespace Game
 {
+    struct TileSelection
+    {
+        std::optional<Core::uint> TileSheetIndex;
+        Core::TileRectCoord SelectionRect;
+
+        bool IsValid() const
+        {
+            return TileSheetIndex && SelectionRect.HasArea();
+        }
+
+        int GetTileIndex(sf::Vector2i Offset, int TileSheetColumns) const
+        {
+            const int Column = SelectionRect.Position.X() + Offset.x;
+            const int Row = SelectionRect.Position.Y() + Offset.y;
+            return Row * TileSheetColumns + Column;
+        }
+    };
+
     class LevelDesignerScene : public Core::Scene
     {
     public:
@@ -16,8 +37,8 @@ namespace Game
         virtual void PostRender() override;
 
         bool IsClickInCanvas(Core::WindowCoordinate MousePos) const;
-        int GetSelectedTileSheetIndex() const { return SelectedTileSheetIndex; }
-        int GetSelectedTileIndex() const { return SelectedTileIndex; }
+        const TileSelection& GetCurrentSelection() const { return CurrentSelection; }
+        int GetTileSheetColumns(int TileSheetIndex) const;
 
     private:
         void ExitToMainMenu();
@@ -27,6 +48,7 @@ namespace Game
         void RenderPropertiesPanel();
 
         sf::FloatRect CalculateCanvasRect() const;
+        void OnTileSheetChanged(int NewTileSheetIndex);
 
         // UI State
         float TilePalettePanelWidth = 250.0f;
@@ -34,9 +56,12 @@ namespace Game
         bool bTilePaletteFloating = false;
         bool bPropertiesFloating = false;
 
-        // Tile Palette State
-        int SelectedTileSheetIndex = 0;
-        int SelectedTileIndex = -1; // -1 = no selection
+        // Tile Selection State
+        int CurrentTileSheetIndex = 0;
+        TileSelection CurrentSelection;
+        bool bIsDraggingTileSelection = false;
+        int DragStartColumn = -1;
+        int DragStartRow = -1;
 
         float PlaceholderPosX = 0.0f;
         float PlaceholderPosY = 0.0f;

@@ -11,6 +11,7 @@
 #include "../World/WorldObject.h"
 #include "../World/World.h"
 #include "../TileMap/Tile.h"
+#include "imgui.h"
 #include <algorithm>
 
 namespace Game
@@ -40,6 +41,9 @@ namespace Game
 
     void LevelEditorController::OnMouseButtonPressed(const sf::Event::MouseButtonPressed& Event)
     {
+        if (ImGui::GetIO().WantCaptureMouse)
+            return;
+
         std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
         std::shared_ptr<Core::TileMapComponent> TileMapPtr = TileMap.lock();
@@ -61,13 +65,30 @@ namespace Game
             if (!TileCoords.IsValid())
                 return;
 
-            int TileSheetId = ScenePtr->GetSelectedTileSheetIndex();
-            int TileIndex = ScenePtr->GetSelectedTileIndex();
-
-            if (TileSheetId < 0 || TileIndex < 0)
+            const Game::TileSelection& Selection = ScenePtr->GetCurrentSelection();
+            if (!Selection.IsValid())
                 return;
 
-            TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), Core::Tile(TileSheetId, TileIndex));
+            int TileSheetColumns = ScenePtr->GetTileSheetColumns(Selection.TileSheetIndex.value());
+            if (TileSheetColumns == 0)
+                return;
+
+            for (int OffsetY = 0; OffsetY < Selection.SelectionRect.Height(); ++OffsetY)
+            {
+                for (int OffsetX = 0; OffsetX < Selection.SelectionRect.Width(); ++OffsetX)
+                {
+                    Core::uint TargetX = TileCoords.X() + OffsetX;
+                    Core::uint TargetY = TileCoords.Y() + OffsetY;
+
+                    if (TargetX >= TileMapPtr->GetTileMap().GetWidth() ||
+                        TargetY >= TileMapPtr->GetTileMap().GetHeight())
+                        continue;
+
+                    int TileIndex = Selection.GetTileIndex(sf::Vector2i(OffsetX, OffsetY), TileSheetColumns);
+                    TileMapPtr->GetTileMap().SetTile(TargetX, TargetY,
+                        Core::Tile(Selection.TileSheetIndex.value(), TileIndex));
+                }
+            }
         }
         else if (Event.button == sf::Mouse::Button::Middle)
         {
@@ -108,6 +129,9 @@ namespace Game
 
     void LevelEditorController::OnMouseWheelScrolled(const sf::Event::MouseWheelScrolled& Event)
     {
+        if (ImGui::GetIO().WantCaptureMouse)
+            return;
+
         std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
             Core::CoordinateProjectionSystem>();
