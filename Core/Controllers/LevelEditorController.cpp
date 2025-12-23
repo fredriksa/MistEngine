@@ -41,9 +41,6 @@ namespace Game
 
     void LevelEditorController::OnMouseButtonPressed(const sf::Event::MouseButtonPressed& Event)
     {
-        if (ImGui::GetIO().WantCaptureMouse)
-            return;
-
         std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
         std::shared_ptr<Core::TileMapComponent> TileMapPtr = TileMap.lock();
@@ -129,17 +126,18 @@ namespace Game
 
     void LevelEditorController::OnMouseWheelScrolled(const sf::Event::MouseWheelScrolled& Event)
     {
-        if (ImGui::GetIO().WantCaptureMouse)
-            return;
-
         std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
         std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
             Core::CoordinateProjectionSystem>();
 
-        if (!CamPtr || !Projector)
+        if (!CamPtr || !ScenePtr || !Projector)
             return;
 
         Core::WindowCoordinate MousePos(Event.position.x, Event.position.y);
+
+        if (!ScenePtr->IsClickInCanvas(MousePos))
+            return;
         Core::WorldCoordinate WorldPosBeforeZoom = Projector->WindowToWorld(MousePos, CamPtr->GetView());
 
         float CurrentZoom = CamPtr->GetZoom();
