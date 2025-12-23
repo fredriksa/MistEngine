@@ -6,11 +6,13 @@
 #include <SFML/OpenGL.hpp>
 #include <unordered_map>
 #include "../../Components/CameraComponent.h"
+#include "../../Components/TileMapComponent.h"
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
 #include "../../Core/Editor/EditorConstants.h"
 #include "../../Core/TileMap/TileSheet.h"
+#include "../../Core/TileMap/TileMap.h"
 
 namespace Game
 {
@@ -448,8 +450,140 @@ void LevelDesignerScene::RenderCanvasArea()
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), true);
+
+    RenderCanvasToolbar();
+
+    if (bLayersPanelOpen)
+    {
+        RenderLayersPanel();
+    }
+
     ImGui::EndChild();
     ImGui::PopStyleColor();
+}
+
+void LevelDesignerScene::RenderCanvasToolbar()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 4));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
+
+    if (ImGui::Button("Layers"))
+    {
+        bLayersPanelOpen = !bLayersPanelOpen;
+    }
+
+    ImGui::PopStyleVar(2);
+    ImGui::Separator();
+}
+
+void LevelDesignerScene::RenderLayersPanel()
+{
+    std::shared_ptr<Core::WorldObject> TileMapObject = World.GetObjectByName("TileMap");
+    if (!TileMapObject)
+    {
+        ImGui::TextDisabled("No tilemap found");
+        return;
+    }
+
+    std::shared_ptr<Core::TileMapComponent> TileMapComp = TileMapObject->Components().Get<Core::TileMapComponent>();
+    if (!TileMapComp)
+    {
+        ImGui::TextDisabled("Tilemap has no TileMapComponent");
+        return;
+    }
+
+    Core::TileMap& TileMapData = TileMapComp->GetTileMap();
+    Core::uint LayerCount = TileMapData.GetLayerCount();
+
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y));
+    ImGui::SetNextWindowSize(ImVec2(250, 400));
+    ImGui::Begin("Layers Panel", &bLayersPanelOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+
+    ImGui::SeparatorText("Layers");
+
+    ImGui::BeginChild("LayerList", ImVec2(0, -30), true);
+
+    for (int i = static_cast<int>(LayerCount) - 1; i >= 0; --i)
+    {
+        ImGui::PushID(i);
+
+        bool bIsSelected = (CurrentLayer == static_cast<Core::uint>(i));
+
+        if (bIsSelected)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+        }
+
+        ImGui::BeginGroup();
+
+        bool bIsVisible = TileMapComp->IsLayerVisible(static_cast<Core::uint>(i));
+        if (ImGui::Checkbox(("##Visible" + std::to_string(i)).c_str(), &bIsVisible))
+        {
+            TileMapComp->SetLayerVisible(static_cast<Core::uint>(i), bIsVisible);
+        }
+        ImGui::SameLine();
+
+        std::string LayerName = "Layer " + std::to_string(i);
+        if (ImGui::Button(LayerName.c_str(), ImVec2(-1, 0)))
+        {
+            CurrentLayer = static_cast<Core::uint>(i);
+        }
+
+        ImGui::EndGroup();
+
+        if (bIsSelected)
+        {
+            ImGui::PopStyleColor(3);
+        }
+
+        ImGui::PopID();
+    }
+
+    ImGui::EndChild();
+
+    ImGui::Separator();
+
+    ImGui::BeginGroup();
+    if (ImGui::Button("+", ImVec2(50, 0)))
+    {
+        TileMapData.AddLayer();
+        CurrentLayer = LayerCount;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("-", ImVec2(50, 0)))
+    {
+        if (LayerCount > 1)
+        {
+            TileMapData.RemoveLayer(CurrentLayer);
+            if (CurrentLayer >= TileMapData.GetLayerCount())
+            {
+                CurrentLayer = TileMapData.GetLayerCount() - 1;
+            }
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("^", ImVec2(50, 0)))
+    {
+        if (CurrentLayer < LayerCount - 1)
+        {
+            TileMapData.SwapLayers(CurrentLayer, CurrentLayer + 1);
+            CurrentLayer++;
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("v", ImVec2(50, 0)))
+    {
+        if (CurrentLayer > 0)
+        {
+            TileMapData.SwapLayers(CurrentLayer, CurrentLayer - 1);
+            CurrentLayer--;
+        }
+    }
+    ImGui::EndGroup();
+
+    ImGui::End();
 }
 
 void LevelDesignerScene::RenderPropertiesPanel()

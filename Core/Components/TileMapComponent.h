@@ -17,9 +17,15 @@ namespace Core
 		TileMap& GetTileMap() { return TileMapData; }
 		const TileMap& GetTileMap() const { return TileMapData; }
 
+		void SetLayerVisible(uint Layer, bool bVisible);
+		bool IsLayerVisible(uint Layer) const;
+
 		nlohmann::json ToJson() const;
 
 	private:
+		void UpdateLayerVisibility();
+
 		TileMap TileMapData{0, 0};
+		std::vector<bool> LayerVisibility;
 	};
 }

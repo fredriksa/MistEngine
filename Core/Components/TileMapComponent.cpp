@@ -13,7 +13,8 @@ namespace Core
 {
     REGISTER_COMPONENT(TileMapComponent);
 
-    TileMapComponent::TileMapComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context)
+    TileMapComponent::TileMapComponent(const std::shared_ptr<WorldObject>& Owner,
+                                       std::shared_ptr<EngineContext> Context)
         : Component(Owner, std::move(Context))
     {
     }
@@ -30,18 +31,76 @@ namespace Core
 
         TileMapData = TileMap(Width, Height);
 
-        if (Data.contains("tiles") && Data["tiles"].is_array())
+        if (Data.contains("layers") && Data["layers"].is_array())
+        {
+            const nlohmann::json& LayersArray = Data["layers"];
+
+            for (size_t LayerIndex = 1; LayerIndex < LayersArray.size(); ++LayerIndex)
+            {
+                TileMapData.AddLayer();
+            }
+
+            for (size_t LayerIndex = 0; LayerIndex < LayersArray.size(); ++LayerIndex)
+            {
+                const nlohmann::json& LayerData = LayersArray[LayerIndex];
+
+                if (LayerData.contains("tiles") && LayerData["tiles"].is_array())
+                {
+                    const nlohmann::json& TilesArray = LayerData["tiles"];
+                    size_t TileCount = Width * Height;
+
+                    for (size_t i = 0; i < TilesArray.size() && i < TileCount; ++i)
+                    {
+                        Tile LoadedTile = Tile::FromJson(TilesArray[i]);
+                        uint X = i % Width;
+                        uint Y = i / Width;
+                        TileMapData.SetTile(X, Y, static_cast<uint>(LayerIndex), LoadedTile);
+                    }
+                }
+            }
+        }
+        else if (Data.contains("tiles") && Data["tiles"].is_array())
         {
             const nlohmann::json& TilesArray = Data["tiles"];
-            for (size_t i = 0; i < TilesArray.size() && i < TileMapData.GetTiles().size(); ++i)
+            size_t TileCount = Width * Height;
+
+            for (size_t i = 0; i < TilesArray.size() && i < TileCount; ++i)
             {
                 Tile LoadedTile = Tile::FromJson(TilesArray[i]);
                 uint X = i % Width;
                 uint Y = i / Width;
-                TileMapData.SetTile(X, Y, LoadedTile);
+                TileMapData.SetTile(X, Y, 0, LoadedTile);
             }
         }
 
+        UpdateLayerVisibility();
+        return true;
+    }
+
+    void TileMapComponent::UpdateLayerVisibility()
+    {
+        uint LayerCount = TileMapData.GetLayerCount();
+        if (LayerVisibility.size() != LayerCount)
+        {
+            LayerVisibility.resize(LayerCount, true);
+        }
+    }
+
+    void TileMapComponent::SetLayerVisible(uint Layer, bool bVisible)
+    {
+        UpdateLayerVisibility();
+        if (Layer < LayerVisibility.size())
+        {
+            LayerVisibility[Layer] = bVisible;
+        }
+    }
+
+    bool TileMapComponent::IsLayerVisible(uint Layer) const
+    {
+        if (Layer < LayerVisibility.size())
+        {
+            return LayerVisibility[Layer];
+        }
         return true;
     }
 
@@ -61,60 +120,77 @@ namespace Core
             return;
         }
 
-        for (uint Y = 0; Y < TileMapData.GetHeight(); ++Y)
+        for (uint Layer = 0; Layer < TileMapData.GetLayerCount(); ++Layer)
         {
-            for (uint X = 0; X < TileMapData.GetWidth(); ++X)
+            if (!IsLayerVisible(Layer))
             {
-                const Tile& Tile = TileMapData.GetTile(X, Y);
+                continue;
+            }
 
-                if (Tile.IsEmpty())
+            for (uint Y = 0; Y < TileMapData.GetHeight(); ++Y)
+            {
+                for (uint X = 0; X < TileMapData.GetWidth(); ++X)
                 {
-                    continue;
+                    const Tile& Tile = TileMapData.GetTile(X, Y, Layer);
+
+                    if (Tile.IsEmpty())
+                    {
+                        continue;
+                    }
+
+                    std::optional<uint> TileSheetId = Tile.GetTileSheetId();
+                    uint TileSheetIndex = TileSheetId.value();
+
+                    if (TileSheetIndex >= TileSheets.size())
+                    {
+                        continue;
+                    }
+
+                    std::shared_ptr<const TileSheet> TileSheet = TileSheets[TileSheetIndex];
+                    if (!TileSheet)
+                    {
+                        continue;
+                    }
+
+                    std::shared_ptr<const sf::Texture> Texture = TileSheet->GetTexture();
+                    if (!Texture)
+                    {
+                        continue;
+                    }
+
+                    sf::IntRect TileRect = TileSheet->GetTileRect(Tile.GetTileIndex());
+
+                    sf::Sprite TileSprite(*Texture);
+                    TileSprite.setTextureRect(TileRect);
+                    TileSprite.setPosition(sf::Vector2f(X * WorldConstants::TileSize, Y * WorldConstants::TileSize));
+
+                    Context.Window->draw(TileSprite);
                 }
-
-                std::optional<uint> TileSheetId = Tile.GetTileSheetId();
-                uint TileSheetIndex = TileSheetId.value();
-
-                if (TileSheetIndex >= TileSheets.size())
-                {
-                    continue;
-                }
-
-                std::shared_ptr<const TileSheet> TileSheet = TileSheets[TileSheetIndex];
-                if (!TileSheet)
-                {
-                    continue;
-                }
-
-                std::shared_ptr<const sf::Texture> Texture = TileSheet->GetTexture();
-                if (!Texture)
-                {
-                    continue;
-                }
-
-                sf::IntRect TileRect = TileSheet->GetTileRect(Tile.GetTileIndex());
-
-                sf::Sprite TileSprite(*Texture);
-                TileSprite.setTextureRect(TileRect);
-                TileSprite.setPosition(sf::Vector2f(X * WorldConstants::TileSize, Y * WorldConstants::TileSize));
-
-                Context.Window->draw(TileSprite);
             }
         }
     }
 
     nlohmann::json TileMapComponent::ToJson() const
     {
-        nlohmann::json TilesArray = nlohmann::json::array();
-        for (const Tile& Tile : TileMapData.GetTiles())
+        nlohmann::json LayersArray = nlohmann::json::array();
+
+        for (uint Layer = 0; Layer < TileMapData.GetLayerCount(); ++Layer)
         {
-            TilesArray.push_back(Tile.ToJson());
+            nlohmann::json TilesArray = nlohmann::json::array();
+            for (const Tile& Tile : TileMapData.GetLayerTiles(Layer))
+            {
+                TilesArray.push_back(Tile.ToJson());
+            }
+
+            nlohmann::json LayerData;
+            LayerData["tiles"] = TilesArray;
+            LayersArray.push_back(LayerData);
         }
 
         return {
             {"width", TileMapData.GetWidth()},
             {"height", TileMapData.GetHeight()},
-            {"tiles", TilesArray}
+            {"layers", LayersArray}
         };
     }
 }

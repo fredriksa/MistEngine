@@ -39,12 +39,15 @@ namespace Game
         bool IsClickInCanvas(Core::WindowCoordinate MousePos) const;
         const TileSelection& GetCurrentSelection() const { return CurrentSelection; }
         int GetTileSheetColumns(int TileSheetIndex) const;
+        Core::uint GetCurrentLayer() const { return CurrentLayer; }
 
     private:
         void ExitToMainMenu();
         void RenderTilePalettePanel();
         void RenderTilePaletteDivider();
         void RenderCanvasArea();
+        void RenderCanvasToolbar();
+        void RenderLayersPanel();
         void RenderPropertiesPanel();
 
         sf::FloatRect CalculateCanvasRect() const;
@@ -55,6 +58,8 @@ namespace Game
         float PropertiesPanelWidth = 300.0f;
         bool bTilePaletteFloating = false;
         bool bPropertiesFloating = false;
+        bool bLayersPanelOpen = false;
+        Core::uint CurrentLayer = 0;
 
         // Tile Selection State
         int CurrentTileSheetIndex = 0;

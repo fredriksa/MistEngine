@@ -41,6 +41,11 @@ namespace Game
 
     void LevelEditorController::OnMouseButtonPressed(const sf::Event::MouseButtonPressed& Event)
     {
+        if (ImGui::IsAnyItemHovered())
+        {
+            return;
+        }
+
         std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
         std::shared_ptr<Core::TileMapComponent> TileMapPtr = TileMap.lock();
@@ -70,6 +75,8 @@ namespace Game
             if (TileSheetColumns == 0)
                 return;
 
+            Core::uint CurrentLayer = ScenePtr->GetCurrentLayer();
+
             for (int OffsetY = 0; OffsetY < Selection.SelectionRect.Height(); ++OffsetY)
             {
                 for (int OffsetX = 0; OffsetX < Selection.SelectionRect.Width(); ++OffsetX)
@@ -82,7 +89,7 @@ namespace Game
                         continue;
 
                     int TileIndex = Selection.GetTileIndex(sf::Vector2i(OffsetX, OffsetY), TileSheetColumns);
-                    TileMapPtr->GetTileMap().SetTile(TargetX, TargetY,
+                    TileMapPtr->GetTileMap().SetTile(TargetX, TargetY, CurrentLayer,
                         Core::Tile(Selection.TileSheetIndex.value(), TileIndex));
                 }
             }
