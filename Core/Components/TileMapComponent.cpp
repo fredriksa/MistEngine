@@ -186,6 +186,37 @@ namespace Core
         }
     }
 
+    TileMapComponent::TileBounds TileMapComponent::GetValidTileBounds() const
+    {
+        TileBounds Bounds;
+        Bounds.MinX = TileMapData.GetWidth();
+        Bounds.MinY = TileMapData.GetHeight();
+        Bounds.MaxX = 0;
+        Bounds.MaxY = 0;
+        Bounds.IsValid = false;
+
+        for (uint Layer = 0; Layer < TileMapData.GetLayerCount(); ++Layer)
+        {
+            for (uint Y = 0; Y < TileMapData.GetHeight(); ++Y)
+            {
+                for (uint X = 0; X < TileMapData.GetWidth(); ++X)
+                {
+                    const Tile& Tile = TileMapData.GetTile(X, Y, Layer);
+                    if (!Tile.IsEmpty())
+                    {
+                        Bounds.IsValid = true;
+                        if (X < Bounds.MinX) Bounds.MinX = X;
+                        if (X > Bounds.MaxX) Bounds.MaxX = X;
+                        if (Y < Bounds.MinY) Bounds.MinY = Y;
+                        if (Y > Bounds.MaxY) Bounds.MaxY = Y;
+                    }
+                }
+            }
+        }
+
+        return Bounds;
+    }
+
     nlohmann::json TileMapComponent::ToJson() const
     {
         nlohmann::json LayersArray = nlohmann::json::array();

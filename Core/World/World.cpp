@@ -90,6 +90,27 @@ namespace Core
         }
     }
 
+    void World::RemoveObject(std::shared_ptr<WorldObject> Object)
+    {
+        if (!Object)
+            return;
+
+        WorldObjects.erase(std::remove(WorldObjects.begin(), WorldObjects.end(), Object), WorldObjects.end());
+        PendingStartObjects.erase(std::remove(PendingStartObjects.begin(), PendingStartObjects.end(), Object), PendingStartObjects.end());
+
+        for (auto It = NamedObjects.begin(); It != NamedObjects.end();)
+        {
+            if (It->second == Object)
+            {
+                It = NamedObjects.erase(It);
+            }
+            else
+            {
+                ++It;
+            }
+        }
+    }
+
     bool World::MoveObjectUp(std::shared_ptr<WorldObject> Object)
     {
         auto It = std::find(WorldObjects.begin(), WorldObjects.end(), Object);

@@ -1,7 +1,13 @@
 ﻿#include "MainMenu.h"
 
+#include <SFML/Graphics/RenderWindow.hpp>
+
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
+#include "../../Core/Components/CameraComponent.h"
+#include "../../Core/Components/TileMapComponent.h"
+#include "../../Core/Components/TransformComponent.h"
+#include "../../Core/World/WorldConstants.h"
 
 #include "imgui.h"
 #include "LevelDesigner.h"
@@ -22,8 +28,24 @@ namespace Game
     {
     }
 
+    void MainMenuScene::OnEnter()
+    {
+        ZoomCameraToFitTileMap();
+    }
+
     void MainMenuScene::PreRender()
     {
+        for (const auto& Obj : World.GetAllObjects())
+        {
+            if (!Obj)
+                continue;
+
+            if (std::shared_ptr<Core::CameraComponent> Camera = Obj->Components().Get<Core::CameraComponent>())
+            {
+                Context->Window->setView(Camera->GetView());
+                break;
+            }
+        }
     }
 
     void MainMenuScene::PostRender()
@@ -76,5 +98,74 @@ namespace Game
     void MainMenuScene::Shutdown()
     {
         Context->Engine->Shutdown();
+    }
+
+    void MainMenuScene::ZoomCameraToFitTileMap()
+    {
+        std::shared_ptr<Core::WorldObject> CameraObject;
+        std::shared_ptr<Core::TileMapComponent> TileMap;
+
+        for (const auto& Obj : World.GetAllObjects())
+        {
+            if (!Obj)
+                continue;
+
+            if (!CameraObject && Obj->Components().Get<Core::CameraComponent>())
+                CameraObject = Obj;
+
+            if (!TileMap)
+                TileMap = Obj->Components().Get<Core::TileMapComponent>();
+
+            if (CameraObject && TileMap)
+                break;
+        }
+
+        if (!CameraObject || !TileMap)
+            return;
+
+        std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>();
+        std::shared_ptr<Core::TransformComponent> CameraTransform = CameraObject->Components().Get<
+            Core::TransformComponent>();
+
+        if (!Camera || !CameraTransform)
+            return;
+
+        Core::TileMapComponent::TileBounds Bounds = TileMap->GetValidTileBounds();
+
+        if (!Bounds.IsValid)
+            return;
+
+        float BoundsWidthTiles = static_cast<float>(Bounds.MaxX - Bounds.MinX + 1);
+        float BoundsHeightTiles = static_cast<float>(Bounds.MaxY - Bounds.MinY + 1);
+
+        float BoundsWidthPixels = BoundsWidthTiles * Core::WorldConstants::TileSize;
+        float BoundsHeightPixels = BoundsHeightTiles * Core::WorldConstants::TileSize;
+
+        float WindowWidth = static_cast<float>(Context->WindowSize.x);
+        float WindowHeight = static_cast<float>(Context->WindowSize.y);
+
+        float ZoomX = BoundsWidthPixels / WindowWidth;
+        float ZoomY = BoundsHeightPixels / WindowHeight;
+
+        float Zoom = (ZoomX > ZoomY) ? ZoomX : ZoomY;
+
+        Camera->SetZoom(Zoom);
+
+        sf::Vector2f TileMapPosition(0.0f, 0.0f);
+        if (Core::WorldObject* TileMapOwner = TileMap->GetOwner())
+        {
+            if (std::shared_ptr<Core::TransformComponent> TileMapTransform = TileMapOwner->Components().Get<
+                Core::TransformComponent>())
+            {
+                TileMapPosition = TileMapTransform->Position;
+            }
+        }
+
+        float CenterX = TileMapPosition.x + (Bounds.MinX + Bounds.MaxX) * 0.5f * Core::WorldConstants::TileSize +
+            Core::WorldConstants::TileSize * 0.5f;
+        float CenterY = TileMapPosition.y + (Bounds.MinY + Bounds.MaxY) * 0.5f * Core::WorldConstants::TileSize +
+            Core::WorldConstants::TileSize * 0.5f;
+
+        CameraTransform->Position = sf::Vector2f(CenterX, CenterY);
     }
 }

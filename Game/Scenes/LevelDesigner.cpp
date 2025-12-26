@@ -807,6 +807,16 @@ namespace Game
                 SelectedObject = Obj;
             }
 
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Delete"))
+                {
+                    World.RemoveObject(Obj);
+                    SelectedObject.reset();
+                }
+                ImGui::EndPopup();
+            }
+
             ImGui::SameLine();
             if (ImGui::SmallButton("^"))
             {
@@ -822,7 +832,7 @@ namespace Game
             ImGui::PopID();
         }
 
-        if (ImGui::BeginPopupContextWindow("HierarchyContextMenu"))
+        if (ImGui::BeginPopupContextWindow("HierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
             if (ImGui::MenuItem("Create Object"))
             {

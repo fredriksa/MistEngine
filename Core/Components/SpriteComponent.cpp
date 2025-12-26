@@ -40,6 +40,9 @@ namespace Core
 
     void SpriteComponent::Render()
     {
+        if (!Sprite)
+            return;
+
         if (TransformComponent* Transform = GetComponent<TransformComponent>())
         {
             Sprite->setPosition(Transform->Position);

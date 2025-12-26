@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "../../Core/Scene/Scene.h"
 
 namespace Game
@@ -9,11 +10,13 @@ namespace Game
         MainMenuScene(std::shared_ptr<Core::EngineContext> InContext);
 
         virtual void OnLoad() override;
+        virtual void OnEnter() override;
         virtual void PreRender() override;
         virtual void PostRender() override;
 
     private:
         void EnterLevelDesigner();
         void Shutdown();
+        void ZoomCameraToFitTileMap();
     };
 }

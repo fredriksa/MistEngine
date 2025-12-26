@@ -26,6 +26,22 @@ namespace Core
 		void SetLayerVisible(uint Layer, bool bVisible);
 		bool IsLayerVisible(uint Layer) const;
 
+		uint GetWidth() const { return TileMapData.GetWidth(); }
+		uint GetHeight() const { return TileMapData.GetHeight(); }
+		uint GetLayerCount() const { return TileMapData.GetLayerCount(); }
+		const Tile& GetTile(uint X, uint Y, uint Layer) const { return TileMapData.GetTile(X, Y, Layer); }
+
+		struct TileBounds
+		{
+			uint MinX = 0;
+			uint MinY = 0;
+			uint MaxX = 0;
+			uint MaxY = 0;
+			bool IsValid = false;
+		};
+
+		TileBounds GetValidTileBounds() const;
+
 		nlohmann::json ToJson() const;
 
 	private:
