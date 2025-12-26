@@ -14,6 +14,20 @@ namespace Core
 
 namespace Game
 {
+    class SceneInfo
+    {
+    public:
+        void SetPath(const std::string& InPath);
+        const std::string& GetName() const;
+        const std::string& GetPath() const;
+        bool IsValid() const;
+        void Clear();
+
+    private:
+        std::string Name;
+        std::string Path;
+    };
+
     struct TileSelection
     {
         std::optional<Core::uint> TileSheetIndex;
@@ -49,8 +63,8 @@ namespace Game
         void ZoomIn();
         void ZoomOut();
         void ResetView();
-        void SaveLevel();
-        void SaveLevelAs(const std::string& LevelName);
+        void SaveScene();
+        void SaveSceneAs(const std::string& SceneName);
 
         std::shared_ptr<Core::TileMapComponent> GetSelectedTileMap() const;
 
@@ -90,8 +104,8 @@ namespace Game
         mutable sf::FloatRect CanvasRect{{0.0f, 0.0f}, {0.0f, 0.0f}};
 
         bool bShowSaveAsModal = false;
-        char SaveAsLevelNameBuffer[256] = "";
-        std::string CurrentLevelPath;
+        char SaveAsSceneNameBuffer[256] = "";
+        SceneInfo CurrentScene;
 
         bool bShowAddComponentModal = false;
         int SelectedComponentTypeIndex = 0;

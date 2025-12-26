@@ -23,6 +23,48 @@
 
 namespace Game
 {
+    void SceneInfo::SetPath(const std::string& InPath)
+    {
+        Path = InPath;
+
+        size_t LastSlash = InPath.find_last_of("/\\");
+        size_t LastDot = InPath.find_last_of('.');
+
+        if (LastSlash != std::string::npos && LastDot != std::string::npos && LastDot > LastSlash)
+        {
+            Name = InPath.substr(LastSlash + 1, LastDot - LastSlash - 1);
+        }
+        else if (LastDot != std::string::npos)
+        {
+            Name = InPath.substr(0, LastDot);
+        }
+        else
+        {
+            Name = InPath;
+        }
+    }
+
+    const std::string& SceneInfo::GetName() const
+    {
+        return Name;
+    }
+
+    const std::string& SceneInfo::GetPath() const
+    {
+        return Path;
+    }
+
+    bool SceneInfo::IsValid() const
+    {
+        return !Path.empty();
+    }
+
+    void SceneInfo::Clear()
+    {
+        Name.clear();
+        Path.clear();
+    }
+
     LevelDesignerScene::LevelDesignerScene(std::shared_ptr<Core::EngineContext> InContext)
         : Scene(std::move(InContext), "LevelDesigner")
     {
@@ -86,18 +128,20 @@ namespace Game
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("New Level", "Ctrl+N"))
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))
                 {
-                    /* TODO */
+                    World.ClearGameObjects();
+                    SelectedObject.reset();
+                    CurrentScene.Clear();
                 }
-                if (ImGui::MenuItem("Open Level...", "Ctrl+O"))
+                if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
                 {
                     /* TODO */
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save", "Ctrl+S"))
                 {
-                    SaveLevel();
+                    SaveScene();
                 }
                 if (ImGui::MenuItem("Save As..."))
                 {
@@ -151,25 +195,25 @@ namespace Game
 
         if (bShowSaveAsModal)
         {
-            ImGui::OpenPopup("Save Level As");
+            ImGui::OpenPopup("Save Scene As");
             bShowSaveAsModal = false;
         }
 
         ImVec2 Center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(Center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-        if (ImGui::BeginPopupModal("Save Level As", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        if (ImGui::BeginPopupModal("Save Scene As", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            ImGui::Text("Enter level name:");
-            ImGui::InputText("##levelname", SaveAsLevelNameBuffer, sizeof(SaveAsLevelNameBuffer));
+            ImGui::Text("Enter scene name:");
+            ImGui::InputText("##scenename", SaveAsSceneNameBuffer, sizeof(SaveAsSceneNameBuffer));
 
             ImGui::Spacing();
 
             if (ImGui::Button("Save", ImVec2(120, 0)))
             {
-                if (strlen(SaveAsLevelNameBuffer) > 0)
+                if (strlen(SaveAsSceneNameBuffer) > 0)
                 {
-                    SaveLevelAs(SaveAsLevelNameBuffer);
+                    SaveSceneAs(SaveAsSceneNameBuffer);
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -986,9 +1030,9 @@ namespace Game
         CurrentSelection = TileSelection();
     }
 
-    void LevelDesignerScene::SaveLevel()
+    void LevelDesignerScene::SaveScene()
     {
-        if (CurrentLevelPath.empty())
+        if (!CurrentScene.IsValid())
         {
             bShowSaveAsModal = true;
         }
@@ -996,7 +1040,7 @@ namespace Game
         {
             nlohmann::json SceneJson = World.ToJson();
 
-            std::ofstream File(CurrentLevelPath);
+            std::ofstream File(CurrentScene.GetPath());
             if (File.is_open())
             {
                 File << SceneJson.dump(4);
@@ -1005,9 +1049,9 @@ namespace Game
         }
     }
 
-    void LevelDesignerScene::SaveLevelAs(const std::string& LevelName)
+    void LevelDesignerScene::SaveSceneAs(const std::string& SceneName)
     {
-        std::string FilePath = "Game/Assets/Scenes/" + LevelName + ".json";
+        std::string FilePath = "Game/Assets/Scenes/" + SceneName + ".json";
 
         nlohmann::json SceneJson = World.ToJson();
 
@@ -1017,8 +1061,8 @@ namespace Game
             File << SceneJson.dump(4);
             File.close();
 
-            CurrentLevelPath = FilePath;
-            memset(SaveAsLevelNameBuffer, 0, sizeof(SaveAsLevelNameBuffer));
+            CurrentScene.SetPath(FilePath);
+            memset(SaveAsSceneNameBuffer, 0, sizeof(SaveAsSceneNameBuffer));
         }
     }
 

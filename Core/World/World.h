@@ -30,6 +30,8 @@ namespace Core
         std::shared_ptr<WorldObject> GetObjectByName(const std::string& Name) const;
         const std::vector<std::shared_ptr<WorldObject>>& GetAllObjects() const { return WorldObjects; }
 
+        void ClearGameObjects();
+
         bool MoveObjectUp(std::shared_ptr<WorldObject> Object);
         bool MoveObjectDown(std::shared_ptr<WorldObject> Object);
 

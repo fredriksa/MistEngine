@@ -60,6 +60,36 @@ namespace Core
         NamedObjects.erase(Name);
     }
 
+    void World::ClearGameObjects()
+    {
+        auto IsGameObject = [](const std::shared_ptr<WorldObject>& Obj)
+        {
+            return Obj && Obj->GetTag() == ObjectTag::Game;
+        };
+
+        WorldObjects.erase(
+            std::remove_if(WorldObjects.begin(), WorldObjects.end(), IsGameObject),
+            WorldObjects.end()
+        );
+
+        PendingStartObjects.erase(
+            std::remove_if(PendingStartObjects.begin(), PendingStartObjects.end(), IsGameObject),
+            PendingStartObjects.end()
+        );
+
+        for (auto It = NamedObjects.begin(); It != NamedObjects.end();)
+        {
+            if (IsGameObject(It->second))
+            {
+                It = NamedObjects.erase(It);
+            }
+            else
+            {
+                ++It;
+            }
+        }
+    }
+
     bool World::MoveObjectUp(std::shared_ptr<WorldObject> Object)
     {
         auto It = std::find(WorldObjects.begin(), WorldObjects.end(), Object);
