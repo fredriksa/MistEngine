@@ -65,12 +65,14 @@ namespace Game
         void ResetView();
         void SaveScene();
         void SaveSceneAs(const std::string& SceneName);
+        Core::Task<> OpenScene(const std::string& SceneName);
 
         std::shared_ptr<Core::TileMapComponent> GetSelectedTileMap() const;
 
     private:
         void CreateEditorInfrastructure();
         void ExitToMainMenu();
+        void RefreshAvailableScenes();
         void RenderTilePalettePanel();
         void RenderTilePaletteDivider();
         void RenderCanvasArea();
@@ -105,7 +107,11 @@ namespace Game
 
         bool bShowSaveAsModal = false;
         char SaveAsSceneNameBuffer[256] = "";
+        bool bShowOpenSceneModal = false;
+        std::vector<std::string> AvailableScenes;
+        int SelectedSceneIndex = -1;
         SceneInfo CurrentScene;
+        std::optional<Core::Task<>> LoadingTask;
 
         bool bShowAddComponentModal = false;
         int SelectedComponentTypeIndex = 0;

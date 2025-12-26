@@ -1,7 +1,9 @@
 ﻿#include "LevelDesigner.h"
 
 #include "imgui.h"
+#include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
@@ -14,6 +16,8 @@
 #include "../../SystemsRegistry.hpp"
 #include "../../Systems/SceneManagerSystem.h"
 #include "../../Systems/AssetRegistrySystem.h"
+#include "../../Core/Scene/SceneLoader.h"
+#include "../../Core/Utils/StringUtils.h"
 #include <fstream>
 #include "../../Core/Editor/EditorConstants.h"
 #include "../../Core/Editor/ComponentEditorRegistry.h"
@@ -136,7 +140,7 @@ namespace Game
                 }
                 if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
                 {
-                    /* TODO */
+                    bShowOpenSceneModal = true;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save", "Ctrl+S"))
@@ -214,6 +218,57 @@ namespace Game
                 if (strlen(SaveAsSceneNameBuffer) > 0)
                 {
                     SaveSceneAs(SaveAsSceneNameBuffer);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (bShowOpenSceneModal)
+        {
+            RefreshAvailableScenes();
+            ImGui::OpenPopup("Open Scene");
+            bShowOpenSceneModal = false;
+        }
+
+        ImGui::SetNextWindowPos(Center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Open Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Select a scene to open:");
+            ImGui::Spacing();
+
+            ImGui::BeginChild("SceneList", ImVec2(400, 300), true);
+            for (int i = 0; i < static_cast<int>(AvailableScenes.size()); ++i)
+            {
+                bool bIsSelected = (SelectedSceneIndex == i);
+                if (ImGui::Selectable(AvailableScenes[i].c_str(), bIsSelected, ImGuiSelectableFlags_AllowDoubleClick))
+                {
+                    SelectedSceneIndex = i;
+                    if (ImGui::IsMouseDoubleClicked(0))
+                    {
+                        LoadingTask = OpenScene(AvailableScenes[SelectedSceneIndex]);
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+            }
+            ImGui::EndChild();
+
+            ImGui::Spacing();
+
+            if (ImGui::Button("Open", ImVec2(120, 0)))
+            {
+                if (SelectedSceneIndex >= 0 && SelectedSceneIndex < static_cast<int>(AvailableScenes.size()))
+                {
+                    LoadingTask = OpenScene(AvailableScenes[SelectedSceneIndex]);
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -966,6 +1021,30 @@ namespace Game
         }
     }
 
+    void LevelDesignerScene::RefreshAvailableScenes()
+    {
+        AvailableScenes.clear();
+        SelectedSceneIndex = -1;
+
+        std::string ScenesDir = "Game/Assets/Scenes/";
+
+        if (!std::filesystem::exists(ScenesDir))
+        {
+            return;
+        }
+
+        for (const auto& Entry : std::filesystem::directory_iterator(ScenesDir))
+        {
+            if (Entry.is_regular_file() && Entry.path().extension() == ".json")
+            {
+                std::string SceneName = Entry.path().stem().string();
+                AvailableScenes.push_back(SceneName);
+            }
+        }
+
+        std::sort(AvailableScenes.begin(), AvailableScenes.end());
+    }
+
     void LevelDesignerScene::ExitToMainMenu()
     {
         Context->SystemsRegistry->GetCoreSystem<
@@ -1064,6 +1143,20 @@ namespace Game
             CurrentScene.SetPath(FilePath);
             memset(SaveAsSceneNameBuffer, 0, sizeof(SaveAsSceneNameBuffer));
         }
+    }
+
+    Core::Task<> LevelDesignerScene::OpenScene(const std::string& SceneName)
+    {
+        World.ClearGameObjects();
+        SelectedObject.reset();
+
+        Core::SceneLoader Loader(Context);
+        co_await Loader.LoadScene(SceneName, World);
+
+        std::string FilePath = "Game/Assets/Scenes/" + Core::ToLowercase(SceneName) + ".json";
+        CurrentScene.SetPath(FilePath);
+
+        co_return;
     }
 
     void LevelDesignerScene::ZoomIn()
