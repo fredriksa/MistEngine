@@ -1,6 +1,7 @@
 #include "LevelDesignerView.h"
 #include "LevelDesignerViewModel.h"
 #include "LevelDesignerModel.h"
+#include "ObjectSelection.h"
 #include "EditorConstants.h"
 #include "ComponentEditorRegistry.h"
 #include "../Components/CameraComponent.h"
@@ -868,5 +869,185 @@ namespace Core
         }
 
         ViewModel.GetWindow().draw(Lines);
+    }
+
+    void LevelDesignerView::RenderGizmos()
+    {
+        const std::shared_ptr<WorldObject> CameraObject = ViewModel.GetModel().GetWorld().Objects().GetByName(
+            "EditorCamera");
+        if (!CameraObject)
+            return;
+
+        const std::shared_ptr<CameraComponent> Camera = CameraObject->Components().Get<CameraComponent>();
+        if (!Camera)
+            return;
+
+        WorldObject* HoveredObject = ViewModel.GetModel().GetHoveredObject();
+        const ObjectSelection& Selection = ViewModel.GetModel().GetSelection();
+
+        sf::VertexArray Gizmos(sf::PrimitiveType::Lines);
+        const sf::Color HoverColor(200, 200, 200, 255);
+        const sf::Color SelectionColor(255, 215, 0, 255);
+
+        if (HoveredObject && !Selection.Contains(HoveredObject))
+        {
+            const TransformComponent* Transform = HoveredObject->Transform();
+            if (Transform)
+            {
+                const sf::Vector2f Position = Transform->Position;
+                constexpr float BoundsSize = 10.0f;
+                constexpr float HalfSize = BoundsSize / 2.0f;
+
+                const sf::Vector2f TopLeft(Position.x - HalfSize, Position.y - HalfSize);
+                const sf::Vector2f TopRight(Position.x + HalfSize, Position.y - HalfSize);
+                const sf::Vector2f BottomLeft(Position.x - HalfSize, Position.y + HalfSize);
+                const sf::Vector2f BottomRight(Position.x + HalfSize, Position.y + HalfSize);
+
+                Gizmos.append(sf::Vertex(TopLeft, HoverColor));
+                Gizmos.append(sf::Vertex(TopRight, HoverColor));
+
+                Gizmos.append(sf::Vertex(TopRight, HoverColor));
+                Gizmos.append(sf::Vertex(BottomRight, HoverColor));
+
+                Gizmos.append(sf::Vertex(BottomRight, HoverColor));
+                Gizmos.append(sf::Vertex(BottomLeft, HoverColor));
+
+                Gizmos.append(sf::Vertex(BottomLeft, HoverColor));
+                Gizmos.append(sf::Vertex(TopLeft, HoverColor));
+            }
+        }
+
+        const std::vector<WorldObject*> ObjectsInSelectionRect = ViewModel.GetObjectsInCurrentSelectionRectangle();
+        for (WorldObject* Object : ObjectsInSelectionRect)
+        {
+            if (!Object || Selection.Contains(Object))
+                continue;
+
+            const TransformComponent* Transform = Object->Transform();
+            if (!Transform)
+                continue;
+
+            const sf::Vector2f Position = Transform->Position;
+            constexpr float BoundsSize = 10.0f;
+            constexpr float HalfSize = BoundsSize / 2.0f;
+
+            const sf::Vector2f TopLeft(Position.x - HalfSize, Position.y - HalfSize);
+            const sf::Vector2f TopRight(Position.x + HalfSize, Position.y - HalfSize);
+            const sf::Vector2f BottomLeft(Position.x - HalfSize, Position.y + HalfSize);
+            const sf::Vector2f BottomRight(Position.x + HalfSize, Position.y + HalfSize);
+
+            Gizmos.append(sf::Vertex(TopLeft, HoverColor));
+            Gizmos.append(sf::Vertex(TopRight, HoverColor));
+
+            Gizmos.append(sf::Vertex(TopRight, HoverColor));
+            Gizmos.append(sf::Vertex(BottomRight, HoverColor));
+
+            Gizmos.append(sf::Vertex(BottomRight, HoverColor));
+            Gizmos.append(sf::Vertex(BottomLeft, HoverColor));
+
+            Gizmos.append(sf::Vertex(BottomLeft, HoverColor));
+            Gizmos.append(sf::Vertex(TopLeft, HoverColor));
+        }
+
+        const std::vector<std::shared_ptr<WorldObject>> SelectedObjects = Selection.GetAllValid();
+        for (const std::shared_ptr<WorldObject>& Object : SelectedObjects)
+        {
+            const TransformComponent* Transform = Object->Transform();
+            if (!Transform)
+                continue;
+
+            const sf::Vector2f Position = Transform->Position;
+            constexpr float BoundsSize = 10.0f;
+            constexpr float HalfSize = BoundsSize / 2.0f;
+
+            const sf::Vector2f TopLeft(Position.x - HalfSize, Position.y - HalfSize);
+            const sf::Vector2f TopRight(Position.x + HalfSize, Position.y - HalfSize);
+            const sf::Vector2f BottomLeft(Position.x - HalfSize, Position.y + HalfSize);
+            const sf::Vector2f BottomRight(Position.x + HalfSize, Position.y + HalfSize);
+
+            Gizmos.append(sf::Vertex(TopLeft, SelectionColor));
+            Gizmos.append(sf::Vertex(TopRight, SelectionColor));
+
+            Gizmos.append(sf::Vertex(TopRight, SelectionColor));
+            Gizmos.append(sf::Vertex(BottomRight, SelectionColor));
+
+            Gizmos.append(sf::Vertex(BottomRight, SelectionColor));
+            Gizmos.append(sf::Vertex(BottomLeft, SelectionColor));
+
+            Gizmos.append(sf::Vertex(BottomLeft, SelectionColor));
+            Gizmos.append(sf::Vertex(TopLeft, SelectionColor));
+
+            constexpr float HandleRadius = 2.0f;
+            constexpr int HandleSegments = 8;
+            for (int i = 0; i < HandleSegments; ++i)
+            {
+                const float Angle1 = (static_cast<float>(i) / static_cast<float>(HandleSegments)) * 2.0f * 3.14159f;
+                const float Angle2 = (static_cast<float>(i + 1) / static_cast<float>(HandleSegments)) * 2.0f * 3.14159f;
+                const sf::Vector2f Point1(Position.x + std::cos(Angle1) * HandleRadius,
+                                          Position.y + std::sin(Angle1) * HandleRadius);
+                const sf::Vector2f Point2(Position.x + std::cos(Angle2) * HandleRadius,
+                                          Position.y + std::sin(Angle2) * HandleRadius);
+                Gizmos.append(sf::Vertex(Point1, SelectionColor));
+                Gizmos.append(sf::Vertex(Point2, SelectionColor));
+            }
+
+            constexpr float ArrowLength = 20.0f;
+            constexpr float ArrowHeadSize = 5.0f;
+            const sf::Color XAxisColor(255, 0, 0, 255);
+            const sf::Color YAxisColor(0, 255, 0, 255);
+
+            const sf::Vector2f XAxisEnd(Position.x + ArrowLength, Position.y);
+            Gizmos.append(sf::Vertex(Position, XAxisColor));
+            Gizmos.append(sf::Vertex(XAxisEnd, XAxisColor));
+            Gizmos.append(sf::Vertex(XAxisEnd, XAxisColor));
+            Gizmos.append(sf::Vertex(sf::Vector2f(XAxisEnd.x - ArrowHeadSize, XAxisEnd.y - ArrowHeadSize), XAxisColor));
+            Gizmos.append(sf::Vertex(XAxisEnd, XAxisColor));
+            Gizmos.append(sf::Vertex(sf::Vector2f(XAxisEnd.x - ArrowHeadSize, XAxisEnd.y + ArrowHeadSize), XAxisColor));
+
+            const sf::Vector2f YAxisEnd(Position.x, Position.y + ArrowLength);
+            Gizmos.append(sf::Vertex(Position, YAxisColor));
+            Gizmos.append(sf::Vertex(YAxisEnd, YAxisColor));
+            Gizmos.append(sf::Vertex(YAxisEnd, YAxisColor));
+            Gizmos.append(sf::Vertex(sf::Vector2f(YAxisEnd.x - ArrowHeadSize, YAxisEnd.y - ArrowHeadSize), YAxisColor));
+            Gizmos.append(sf::Vertex(YAxisEnd, YAxisColor));
+            Gizmos.append(sf::Vertex(sf::Vector2f(YAxisEnd.x + ArrowHeadSize, YAxisEnd.y - ArrowHeadSize), YAxisColor));
+        }
+
+        ViewModel.GetWindow().draw(Gizmos);
+
+        if (ViewModel.IsSelectingRectangle())
+        {
+            const WindowCoordinate SelectStart = ViewModel.GetSelectionRectStart();
+            const WindowCoordinate SelectCurrent = ViewModel.GetSelectionRectCurrent();
+
+            const sf::View DefaultView = ViewModel.GetWindow().getDefaultView();
+            ViewModel.GetWindow().setView(DefaultView);
+
+            const sf::Color OutlineColor(100, 150, 255, 255);
+
+            const float MinX = static_cast<float>(std::min(SelectStart.X(), SelectCurrent.X()));
+            const float MaxX = static_cast<float>(std::max(SelectStart.X(), SelectCurrent.X()));
+            const float MinY = static_cast<float>(std::min(SelectStart.Y(), SelectCurrent.Y()));
+            const float MaxY = static_cast<float>(std::max(SelectStart.Y(), SelectCurrent.Y()));
+
+            const sf::Vector2f TopLeft(MinX, MinY);
+            const sf::Vector2f TopRight(MaxX, MinY);
+            const sf::Vector2f BottomLeft(MinX, MaxY);
+            const sf::Vector2f BottomRight(MaxX, MaxY);
+
+            sf::VertexArray RectOutline(sf::PrimitiveType::Lines);
+            RectOutline.append(sf::Vertex(TopLeft, OutlineColor));
+            RectOutline.append(sf::Vertex(TopRight, OutlineColor));
+            RectOutline.append(sf::Vertex(TopRight, OutlineColor));
+            RectOutline.append(sf::Vertex(BottomRight, OutlineColor));
+            RectOutline.append(sf::Vertex(BottomRight, OutlineColor));
+            RectOutline.append(sf::Vertex(BottomLeft, OutlineColor));
+            RectOutline.append(sf::Vertex(BottomLeft, OutlineColor));
+            RectOutline.append(sf::Vertex(TopLeft, OutlineColor));
+
+            ViewModel.GetWindow().draw(RectOutline);
+
+            ViewModel.GetWindow().setView(Camera->GetView());
+        }
     }
 }

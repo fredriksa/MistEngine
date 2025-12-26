@@ -36,6 +36,8 @@ namespace Core
         WindowCoordinate LastMousePosition{0, 0};
         WorldCoordinate LastPanWorldPos;
 
+        bool bSelectRectCtrlHeld = false;
+
         sf::Vector2f InitialCameraPosition{0.0f, 0.0f};
         float InitialZoom = 0.25f;
     };

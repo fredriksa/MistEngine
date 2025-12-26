@@ -7,6 +7,9 @@
 #include "../Async/Task.hpp"
 #include "../Common.h"
 #include "../Coordinates/TypedRect.hpp"
+#include "../Coordinates/WorldCoordinate.h"
+#include "../Coordinates/WindowCoordinate.h"
+#include "ObjectSelection.h"
 
 namespace Core
 {
@@ -14,6 +17,28 @@ namespace Core
     class WorldObject;
     class TileMapComponent;
     struct EngineContext;
+
+    enum class EditorTool
+    {
+        Paint,
+        Select
+    };
+
+    enum class GizmoPart
+    {
+        None,
+        CenterHandle,
+        XAxis,
+        YAxis
+    };
+
+    enum class DragMode
+    {
+        None,
+        XY,
+        XOnly,
+        YOnly
+    };
 
     struct TileSelection
     {
@@ -79,14 +104,44 @@ namespace Core
         void ToggleGrid() { bShowGrid = !bShowGrid; }
         void SetGridVisible(bool bVisible) { bShowGrid = bVisible; }
 
-        void SetSelectedObject(const std::shared_ptr<WorldObject>& Object);
-        std::shared_ptr<WorldObject> GetSelectedObject() const;
+        ObjectSelection& GetSelection() { return Selection; }
+        const ObjectSelection& GetSelection() const { return Selection; }
+        std::shared_ptr<WorldObject> GetPrimarySelected() const { return Selection.GetPrimary(); }
         std::shared_ptr<TileMapComponent> GetSelectedTileMap() const;
+
+        void SetCurrentTool(EditorTool Tool) { CurrentTool = Tool; }
+        EditorTool GetCurrentTool() const { return CurrentTool; }
+
+        void SelectObjectAtPosition(struct WorldCoordinate WorldPos, bool bAdditive);
+        void SelectObjectsInRectangle(WorldCoordinate TopLeft, WorldCoordinate BottomRight, bool bAdditive);
+        void ClearSelection();
+
+        void SetHoveredObject(WorldCoordinate WorldPos);
+        void ClearHoveredObject();
+        WorldObject* GetHoveredObject() const { return HoveredObject; }
+
+        void StartSelectionRectangle(struct WindowCoordinate Start);
+        void UpdateSelectionRectangle(struct WindowCoordinate Current);
+        void ClearSelectionRectangle();
+        bool IsSelectingRectangle() const { return bIsSelectingRectangle; }
+        WindowCoordinate GetSelectionRectStart() const { return SelectRectStart; }
+        WindowCoordinate GetSelectionRectCurrent() const { return SelectRectCurrent; }
+
+        GizmoPart GetGizmoPartAtPosition(WorldCoordinate WorldPos) const;
+        void StartDraggingObjects(WorldCoordinate StartPos, DragMode Mode);
+        void UpdateDraggedObjects(WorldCoordinate CurrentPos);
+        void EndDraggingObjects();
+        bool IsDraggingObjects() const { return bIsDraggingObjects; }
+
+        WorldObject* GetObjectAtPosition(WorldCoordinate WorldPos) const;
+        std::vector<WorldObject*> GetObjectsInRectangle(WorldCoordinate TopLeft, WorldCoordinate BottomRight) const;
 
         World& GetWorld() { return WorldRef; }
         const World& GetWorld() const { return WorldRef; }
 
     private:
+        sf::FloatRect GetObjectBounds(const WorldObject* Object) const;
+
         World& WorldRef;
         std::shared_ptr<EngineContext> Context;
         SceneInfo CurrentScene;
@@ -95,6 +150,15 @@ namespace Core
         int CurrentTileSheetIndex = 0;
         uint CurrentLayer = 0;
         bool bShowGrid = true;
-        std::weak_ptr<WorldObject> SelectedObject;
+        ObjectSelection Selection;
+        EditorTool CurrentTool = EditorTool::Select;
+        WorldObject* HoveredObject = nullptr;
+        bool bIsSelectingRectangle = false;
+        WindowCoordinate SelectRectStart{0, 0};
+        WindowCoordinate SelectRectCurrent{0, 0};
+        bool bIsDraggingObjects = false;
+        DragMode CurrentDragMode = DragMode::None;
+        WorldCoordinate DragStartPos;
+        std::vector<std::pair<WorldObject*, sf::Vector2f>> DraggedObjectsInitialPositions;
     };
 }

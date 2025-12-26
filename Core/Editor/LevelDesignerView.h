@@ -19,6 +19,7 @@ namespace Core
         void RenderMenuBar(std::optional<Task<>>& LoadingTask);
         void RenderMainContent();
         void DrawSceneGrid();
+        void RenderGizmos();
         void CalculateCanvasRect();
 
         sf::FloatRect GetCanvasRect() const { return CanvasRect; }

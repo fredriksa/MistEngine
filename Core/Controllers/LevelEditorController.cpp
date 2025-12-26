@@ -57,12 +57,76 @@ namespace Core
             return;
         }
 
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
+        if (!ScenePtr)
+            return;
+
         WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
 
         if (Event.button == sf::Mouse::Button::Left)
         {
-            bIsPainting = true;
-            PaintTileAtMousePosition(WindowCoords);
+            if (ScenePtr->GetModel().GetCurrentTool() == EditorTool::Paint)
+            {
+                bIsPainting = true;
+                PaintTileAtMousePosition(WindowCoords);
+            }
+            else if (ScenePtr->GetModel().GetCurrentTool() == EditorTool::Select)
+            {
+                std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+                std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+                    Core::CoordinateProjectionSystem>();
+
+                if (!CamPtr || !Projector)
+                    return;
+
+                if (!ScenePtr->IsClickInCanvas(WindowCoords))
+                    return;
+
+                const bool bCtrlHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ||
+                                       sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RControl);
+
+                WorldCoordinate WorldPos = Projector->WindowToWorld(WindowCoords, CamPtr->GetView());
+
+                GizmoPart ClickedGizmoPart = ScenePtr->GetModel().GetGizmoPartAtPosition(WorldPos);
+                if (ClickedGizmoPart != GizmoPart::None)
+                {
+                    DragMode Mode = DragMode::XY;
+                    if (ClickedGizmoPart == GizmoPart::XAxis)
+                        Mode = DragMode::XOnly;
+                    else if (ClickedGizmoPart == GizmoPart::YAxis)
+                        Mode = DragMode::YOnly;
+
+                    ScenePtr->GetModel().StartDraggingObjects(WorldPos, Mode);
+                }
+                else
+                {
+                    WorldObject* HitObject = ScenePtr->GetModel().GetObjectAtPosition(WorldPos);
+                    if (HitObject)
+                    {
+                        if (bCtrlHeld)
+                        {
+                            ScenePtr->GetModel().GetSelection().Toggle(HitObject->shared_from_this());
+                        }
+                        else
+                        {
+                            if (!ScenePtr->GetModel().GetSelection().Contains(HitObject))
+                            {
+                                ScenePtr->GetModel().GetSelection().Clear();
+                                ScenePtr->GetModel().GetSelection().Add(HitObject->shared_from_this());
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!bCtrlHeld)
+                        {
+                            ScenePtr->GetModel().GetSelection().Clear();
+                        }
+                        ScenePtr->GetModel().StartSelectionRectangle(WindowCoords);
+                        bSelectRectCtrlHeld = bCtrlHeld;
+                    }
+                }
+            }
         }
         else if (Event.button == sf::Mouse::Button::Middle)
         {
@@ -83,6 +147,42 @@ namespace Core
         if (Event.button == sf::Mouse::Button::Left)
         {
             bIsPainting = false;
+
+            std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
+            if (ScenePtr)
+            {
+                if (ScenePtr->GetModel().IsDraggingObjects())
+                {
+                    ScenePtr->GetModel().EndDraggingObjects();
+                }
+                else if (ScenePtr->GetModel().IsSelectingRectangle())
+                {
+                    std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+                    std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+                        Core::CoordinateProjectionSystem>();
+
+                    if (CamPtr && Projector)
+                    {
+                        WindowCoordinate SelectRectStart = ScenePtr->GetModel().GetSelectionRectStart();
+                        WindowCoordinate SelectRectEnd = ScenePtr->GetModel().GetSelectionRectCurrent();
+
+                        WorldCoordinate WorldStart = Projector->WindowToWorld(SelectRectStart, CamPtr->GetView());
+                        WorldCoordinate WorldEnd = Projector->WindowToWorld(SelectRectEnd, CamPtr->GetView());
+
+                        const float MinX = std::min(WorldStart.X(), WorldEnd.X());
+                        const float MaxX = std::max(WorldStart.X(), WorldEnd.X());
+                        const float MinY = std::min(WorldStart.Y(), WorldEnd.Y());
+                        const float MaxY = std::max(WorldStart.Y(), WorldEnd.Y());
+
+                        WorldCoordinate TopLeft(MinX, MinY);
+                        WorldCoordinate BottomRight(MaxX, MaxY);
+
+                        ScenePtr->GetModel().SelectObjectsInRectangle(TopLeft, BottomRight, bSelectRectCtrlHeld);
+                    }
+
+                    ScenePtr->GetModel().ClearSelectionRectangle();
+                }
+            }
         }
         else if (Event.button == sf::Mouse::Button::Middle)
         {
@@ -94,6 +194,8 @@ namespace Core
     {
         WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
         LastMousePosition = WindowCoords;
+
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
 
         if (bIsPainting)
         {
@@ -116,6 +218,35 @@ namespace Core
             GetOwner()->Transform()->Position += Delta.Value;
 
             LastPanWorldPos = Projector->WindowToWorld(WindowCoords, CamPtr->GetView());
+        }
+
+        if (ScenePtr && ScenePtr->GetModel().GetCurrentTool() == EditorTool::Select)
+        {
+            std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+            std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+                Core::CoordinateProjectionSystem>();
+
+            if (!CamPtr || !Projector)
+                return;
+
+            WorldCoordinate WorldPos = Projector->WindowToWorld(WindowCoords, CamPtr->GetView());
+
+            if (ScenePtr->GetModel().IsDraggingObjects())
+            {
+                ScenePtr->GetModel().UpdateDraggedObjects(WorldPos);
+            }
+            else if (ScenePtr->GetModel().IsSelectingRectangle())
+            {
+                ScenePtr->GetModel().UpdateSelectionRectangle(WindowCoords);
+            }
+            else if (ScenePtr->IsClickInCanvas(WindowCoords))
+            {
+                ScenePtr->GetModel().SetHoveredObject(WorldPos);
+            }
+            else
+            {
+                ScenePtr->GetModel().ClearHoveredObject();
+            }
         }
     }
 
@@ -188,6 +319,18 @@ namespace Core
             if (GetOwner()->Transform())
             {
                 GetOwner()->Transform()->Position = InitialCameraPosition;
+            }
+        }
+        else if (Event.code == sf::Keyboard::Key::S)
+        {
+            ScenePtr->GetModel().SetCurrentTool(EditorTool::Select);
+        }
+        else if (Event.code == sf::Keyboard::Key::P)
+        {
+            std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
+            if (TileMapPtr)
+            {
+                ScenePtr->GetModel().SetCurrentTool(EditorTool::Paint);
             }
         }
         else if (Event.code == sf::Keyboard::Key::D)

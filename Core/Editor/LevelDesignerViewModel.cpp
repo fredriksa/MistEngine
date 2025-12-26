@@ -2,12 +2,14 @@
 #include "LevelDesignerModel.h"
 #include "../World/World.h"
 #include "../World/WorldObject.h"
+#include "../Components/CameraComponent.h"
 #include "../Components/TileMapComponent.h"
 #include "../Components/TransformComponent.h"
 #include "../EngineContext.hpp"
 #include "../SystemsRegistry.hpp"
 #include "../Systems/SceneManagerSystem.h"
 #include "../Systems/AssetRegistrySystem.h"
+#include "../Systems/CoordinateProjectionSystem.h"
 #include "../TileMap/TileSheet.h"
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -20,18 +22,21 @@ namespace Core
 
     void LevelDesignerViewModel::SelectObject(const std::shared_ptr<WorldObject>& Object)
     {
-        Model.SetSelectedObject(Object);
+        Model.GetSelection().Clear();
+        if (Object)
+        {
+            Model.GetSelection().Add(Object);
+        }
     }
 
     std::shared_ptr<WorldObject> LevelDesignerViewModel::GetSelectedObject() const
     {
-        return Model.GetSelectedObject();
+        return Model.GetPrimarySelected();
     }
 
     bool LevelDesignerViewModel::IsObjectSelected(const WorldObject* Object) const
     {
-        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
-        return Selected && Selected.get() == Object;
+        return Model.GetSelection().Contains(Object);
     }
 
     bool LevelDesignerViewModel::IsGridVisible() const
@@ -106,17 +111,17 @@ namespace Core
 
     void LevelDesignerViewModel::DeleteSelectedObject()
     {
-        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        const std::shared_ptr<WorldObject> Selected = Model.GetPrimarySelected();
         if (Selected)
         {
             Model.RemoveObject(Selected);
-            Model.SetSelectedObject(nullptr);
+            Model.GetSelection().Clear();
         }
     }
 
     void LevelDesignerViewModel::MoveSelectedObjectUp()
     {
-        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        const std::shared_ptr<WorldObject> Selected = Model.GetPrimarySelected();
         if (Selected)
         {
             Model.MoveObjectUp(Selected);
@@ -125,7 +130,7 @@ namespace Core
 
     void LevelDesignerViewModel::MoveSelectedObjectDown()
     {
-        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        const std::shared_ptr<WorldObject> Selected = Model.GetPrimarySelected();
         if (Selected)
         {
             Model.MoveObjectDown(Selected);
@@ -217,5 +222,63 @@ namespace Core
         }
 
         return sf::Vector2u(0, 0);
+    }
+
+    bool LevelDesignerViewModel::IsSelectingRectangle() const
+    {
+        return Model.IsSelectingRectangle();
+    }
+
+    WindowCoordinate LevelDesignerViewModel::GetSelectionRectStart() const
+    {
+        return Model.GetSelectionRectStart();
+    }
+
+    WindowCoordinate LevelDesignerViewModel::GetSelectionRectCurrent() const
+    {
+        return Model.GetSelectionRectCurrent();
+    }
+
+    std::vector<WorldObject*> LevelDesignerViewModel::GetObjectsInCurrentSelectionRectangle() const
+    {
+        if (!Model.IsSelectingRectangle())
+            return {};
+
+        const std::shared_ptr<WorldObject> CameraObject = Model.GetWorld().Objects().GetByName("EditorCamera");
+        if (!CameraObject)
+            return {};
+
+        const std::shared_ptr<CameraComponent> Camera = CameraObject->Components().Get<CameraComponent>();
+        if (!Camera)
+            return {};
+
+        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
+        if (AllObjects.empty())
+            return {};
+
+        const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
+        if (!Context || !Context->SystemsRegistry)
+            return {};
+
+        const std::shared_ptr<CoordinateProjectionSystem> Projector =
+            Context->SystemsRegistry->GetCoreSystem<CoordinateProjectionSystem>();
+        if (!Projector)
+            return {};
+
+        const WindowCoordinate SelectStart = Model.GetSelectionRectStart();
+        const WindowCoordinate SelectCurrent = Model.GetSelectionRectCurrent();
+
+        const WorldCoordinate WorldStart = Projector->WindowToWorld(SelectStart, Camera->GetView());
+        const WorldCoordinate WorldEnd = Projector->WindowToWorld(SelectCurrent, Camera->GetView());
+
+        const float MinX = std::min(WorldStart.X(), WorldEnd.X());
+        const float MaxX = std::max(WorldStart.X(), WorldEnd.X());
+        const float MinY = std::min(WorldStart.Y(), WorldEnd.Y());
+        const float MaxY = std::max(WorldStart.Y(), WorldEnd.Y());
+
+        const WorldCoordinate TopLeft(MinX, MinY);
+        const WorldCoordinate BottomRight(MaxX, MaxY);
+
+        return Model.GetObjectsInRectangle(TopLeft, BottomRight);
     }
 }

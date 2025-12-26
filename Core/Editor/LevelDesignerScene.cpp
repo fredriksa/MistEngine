@@ -64,6 +64,7 @@ namespace Core
     void LevelDesignerScene::PostRender()
     {
         View.DrawSceneGrid();
+        View.RenderGizmos();
 
         glDisable(GL_SCISSOR_TEST);
 

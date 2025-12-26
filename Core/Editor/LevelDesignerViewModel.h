@@ -6,6 +6,7 @@
 #include <SFML/System/Vector2.hpp>
 #include "../Common.h"
 #include "../Coordinates/TypedRect.hpp"
+#include "../Coordinates/WindowCoordinate.h"
 
 namespace sf
 {
@@ -48,6 +49,11 @@ namespace Core
 
         bool IsGridVisible() const;
         void ToggleGrid();
+
+        bool IsSelectingRectangle() const;
+        struct WindowCoordinate GetSelectionRectStart() const;
+        struct WindowCoordinate GetSelectionRectCurrent() const;
+        std::vector<WorldObject*> GetObjectsInCurrentSelectionRectangle() const;
 
         bool IsLayersPanelOpen() const { return bLayersPanelOpen; }
         void SetLayersPanelOpen(bool bOpen) { bLayersPanelOpen = bOpen; }
