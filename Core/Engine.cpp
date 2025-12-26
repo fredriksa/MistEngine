@@ -22,14 +22,15 @@ namespace Core
         Context->Engine = this;
         Context->WindowSize = sf::Vector2u(1920, 1080);
         Context->Window = std::make_shared<sf::RenderWindow>(sf::VideoMode(Context->WindowSize), "Mist Engine");
+        Context->Window->requestFocus();
         Context->SystemsRegistry = SystemsRegistry;
 
         SystemsRegistry->Register<AssetRegistrySystem>(Context);
+        SystemsRegistry->Register<ImGuiSystem>(Context);
         SystemsRegistry->Register<InputSystem>(Context);
         SystemsRegistry->Register<SceneManagerSystem>(Context);
         SystemsRegistry->Register<DataAssetRegistrySystem>(Context);
         SystemsRegistry->Register<WorldObjectSystem>(Context);
-        SystemsRegistry->Register<ImGuiSystem>(Context);
         SystemsRegistry->Register<CoordinateProjectionSystem>(Context);
     }
 
@@ -50,6 +51,10 @@ namespace Core
         FrameClock.start();
 
         const std::shared_ptr<sf::RenderWindow>& Window = Context->Window;
+        Window->setActive(true);
+        Window->clear();
+        Window->display();
+
         while (Window->isOpen())
         {
             float DeltaTimeS = FrameClock.restart().asSeconds();
