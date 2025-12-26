@@ -48,13 +48,12 @@ namespace Core
                 if (LayerData.contains("tiles") && LayerData["tiles"].is_array())
                 {
                     const nlohmann::json& TilesArray = LayerData["tiles"];
-                    size_t TileCount = Width * Height;
 
-                    for (size_t i = 0; i < TilesArray.size() && i < TileCount; ++i)
+                    for (const auto& TileJson : TilesArray)
                     {
-                        Tile LoadedTile = Tile::FromJson(TilesArray[i]);
-                        uint X = i % Width;
-                        uint Y = i / Width;
+                        uint X = TileJson.value("x", 0u);
+                        uint Y = TileJson.value("y", 0u);
+                        Tile LoadedTile = Tile::FromJson(TileJson);
                         TileMapData.SetTile(X, Y, static_cast<uint>(LayerIndex), LoadedTile);
                     }
                 }
@@ -63,13 +62,12 @@ namespace Core
         else if (Data.contains("tiles") && Data["tiles"].is_array())
         {
             const nlohmann::json& TilesArray = Data["tiles"];
-            size_t TileCount = Width * Height;
 
-            for (size_t i = 0; i < TilesArray.size() && i < TileCount; ++i)
+            for (const auto& TileJson : TilesArray)
             {
-                Tile LoadedTile = Tile::FromJson(TilesArray[i]);
-                uint X = i % Width;
-                uint Y = i / Width;
+                uint X = TileJson.value("x", 0u);
+                uint Y = TileJson.value("y", 0u);
+                Tile LoadedTile = Tile::FromJson(TileJson);
                 TileMapData.SetTile(X, Y, 0, LoadedTile);
             }
         }
@@ -195,9 +193,21 @@ namespace Core
         for (uint Layer = 0; Layer < TileMapData.GetLayerCount(); ++Layer)
         {
             nlohmann::json TilesArray = nlohmann::json::array();
-            for (const Tile& Tile : TileMapData.GetLayerTiles(Layer))
+
+            for (uint Y = 0; Y < TileMapData.GetHeight(); ++Y)
             {
-                TilesArray.push_back(Tile.ToJson());
+                for (uint X = 0; X < TileMapData.GetWidth(); ++X)
+                {
+                    const Tile& Tile = TileMapData.GetTile(X, Y, Layer);
+
+                    if (!Tile.IsEmpty())
+                    {
+                        nlohmann::json TileJson = Tile.ToJson();
+                        TileJson["x"] = X;
+                        TileJson["y"] = Y;
+                        TilesArray.push_back(TileJson);
+                    }
+                }
             }
 
             nlohmann::json LayerData;

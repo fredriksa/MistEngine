@@ -725,7 +725,7 @@ namespace Game
 
         if (ImGui::BeginPopupContextWindow("HierarchyContextMenu"))
         {
-            if (ImGui::MenuItem("Create Empty Object"))
+            if (ImGui::MenuItem("Create Object"))
             {
                 std::shared_ptr<Core::WorldObject> NewObject = World.CreateObject();
                 NewObject->SetTag(Core::ObjectTag::Game);
