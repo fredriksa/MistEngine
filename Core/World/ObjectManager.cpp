@@ -17,7 +17,7 @@ namespace Core
         return Object;
     }
 
-    void ObjectManager::Register(std::shared_ptr<WorldObject> Object)
+    void ObjectManager::Register(const std::shared_ptr<WorldObject>& Object)
     {
         Objects.push_back(Object);
         PendingStartObjects.push_back(Object);
@@ -33,9 +33,9 @@ namespace Core
         return nullptr;
     }
 
-    void ObjectManager::RegisterName(const std::string& Name, std::shared_ptr<WorldObject> Object)
+    void ObjectManager::RegisterName(const std::string& Name, const std::shared_ptr<WorldObject>& Object)
     {
-        NamedObjects[Name] = std::move(Object);
+        NamedObjects[Name] = Object;
     }
 
     void ObjectManager::UnregisterName(const std::string& Name)
@@ -73,7 +73,7 @@ namespace Core
         }
     }
 
-    void ObjectManager::Remove(std::shared_ptr<WorldObject> Object)
+    void ObjectManager::Remove(const std::shared_ptr<WorldObject>& Object)
     {
         if (!Object)
             return;
@@ -95,7 +95,7 @@ namespace Core
         }
     }
 
-    bool ObjectManager::MoveUp(std::shared_ptr<WorldObject> Object)
+    bool ObjectManager::MoveUp(const std::shared_ptr<WorldObject>& Object)
     {
         auto It = std::find(Objects.begin(), Objects.end(), Object);
         if (It == Objects.end() || It == Objects.begin())
@@ -107,7 +107,7 @@ namespace Core
         return true;
     }
 
-    bool ObjectManager::MoveDown(std::shared_ptr<WorldObject> Object)
+    bool ObjectManager::MoveDown(const std::shared_ptr<WorldObject>& Object)
     {
         auto It = std::find(Objects.begin(), Objects.end(), Object);
         if (It == Objects.end() || It == Objects.end() - 1)

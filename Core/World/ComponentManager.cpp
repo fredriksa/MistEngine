@@ -10,7 +10,7 @@ namespace Core
     {
     }
 
-    void ComponentManager::Attach(std::shared_ptr<Component> Component)
+    void ComponentManager::Attach(const std::shared_ptr<Component>& Component)
     {
         TypeToComponent.emplace(std::type_index(typeid(*Component)), Component);
     }

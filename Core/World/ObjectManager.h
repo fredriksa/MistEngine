@@ -18,18 +18,18 @@ namespace Core
         ObjectManager(World* Owner, std::shared_ptr<EngineContext> Context);
 
         std::shared_ptr<WorldObject> CreateObject();
-        void Register(std::shared_ptr<WorldObject> Object);
+        void Register(const std::shared_ptr<WorldObject>& Object);
 
         std::shared_ptr<WorldObject> GetByName(const std::string& Name) const;
         const std::vector<std::shared_ptr<WorldObject>>& GetAll() const { return Objects; }
 
         void Clear();
-        void Remove(std::shared_ptr<WorldObject> Object);
+        void Remove(const std::shared_ptr<WorldObject>& Object);
 
-        bool MoveUp(std::shared_ptr<WorldObject> Object);
-        bool MoveDown(std::shared_ptr<WorldObject> Object);
+        bool MoveUp(const std::shared_ptr<WorldObject>& Object);
+        bool MoveDown(const std::shared_ptr<WorldObject>& Object);
 
-        void RegisterName(const std::string& Name, std::shared_ptr<WorldObject> Object);
+        void RegisterName(const std::string& Name, const std::shared_ptr<WorldObject>& Object);
         void UnregisterName(const std::string& Name);
 
         void StartPendingComponents();

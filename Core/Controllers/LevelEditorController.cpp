@@ -157,7 +157,7 @@ namespace Core
 
         if (Event.code == sf::Keyboard::Key::G)
         {
-            ScenePtr->ToggleGrid();
+            ScenePtr->GetModel().ToggleGrid();
         }
         else if (Event.code == sf::Keyboard::Key::Equal)
         {
@@ -206,7 +206,7 @@ namespace Core
         if (!CamPtr || !ScenePtr || !Projector)
             return;
 
-        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetSelectedTileMap();
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
         if (!TileMapPtr)
             return;
 
@@ -220,15 +220,15 @@ namespace Core
         if (!TileCoords.IsValid())
             return;
 
-        TileSelection Selection = ScenePtr->GetCurrentSelection();
+        TileSelection Selection = ScenePtr->GetModel().GetCurrentSelection();
         if (!Selection.IsValid())
             return;
 
-        int TileSheetColumns = ScenePtr->GetTileSheetColumns(Selection.TileSheetIndex.value());
+        int TileSheetColumns = ScenePtr->GetModel().GetTileSheetColumns(Selection.TileSheetIndex.value());
         if (TileSheetColumns == 0)
             return;
 
-        Core::uint CurrentLayer = ScenePtr->GetCurrentLayer();
+        Core::uint CurrentLayer = ScenePtr->GetModel().GetCurrentLayer();
 
         for (int OffsetY = 0; OffsetY < Selection.SelectionRect.Height(); ++OffsetY)
         {
@@ -258,7 +258,7 @@ namespace Core
         if (!CamPtr || !ScenePtr || !Projector)
             return;
 
-        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetSelectedTileMap();
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
         if (!TileMapPtr)
             return;
 
@@ -272,7 +272,7 @@ namespace Core
         if (!TileCoords.IsValid())
             return;
 
-        Core::uint CurrentLayer = ScenePtr->GetCurrentLayer();
+        Core::uint CurrentLayer = ScenePtr->GetModel().GetCurrentLayer();
         TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), CurrentLayer, Tile());
     }
 }

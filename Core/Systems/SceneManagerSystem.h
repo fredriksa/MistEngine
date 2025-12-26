@@ -20,7 +20,6 @@ namespace Core
             requires IsScene<T>
         void Push();
 
-        bool Pop();
         void RequestPop();
 
         std::shared_ptr<Scene> GetActiveScene() const { return ActiveScene; }
@@ -30,6 +29,7 @@ namespace Core
         virtual void Render() override;
 
     private:
+        bool Pop();
         std::stack<std::shared_ptr<Scene>> Scenes;
         std::shared_ptr<Scene> ActiveScene{nullptr};
         bool bPopRequested = false;

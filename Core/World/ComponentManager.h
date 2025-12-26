@@ -16,7 +16,7 @@ namespace Core
     public:
         ComponentManager(WorldObject* Owner);
 
-        void Attach(std::shared_ptr<Component> Component);
+        void Attach(const std::shared_ptr<Component>& Component);
 
         template <typename T>
             requires IsComponent<T>

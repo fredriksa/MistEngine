@@ -1,0 +1,221 @@
+#include "LevelDesignerViewModel.h"
+#include "LevelDesignerModel.h"
+#include "../World/World.h"
+#include "../World/WorldObject.h"
+#include "../Components/TileMapComponent.h"
+#include "../Components/TransformComponent.h"
+#include "../EngineContext.hpp"
+#include "../SystemsRegistry.hpp"
+#include "../Systems/SceneManagerSystem.h"
+#include "../Systems/AssetRegistrySystem.h"
+#include "../TileMap/TileSheet.h"
+#include <SFML/Graphics/RenderWindow.hpp>
+
+namespace Core
+{
+    LevelDesignerViewModel::LevelDesignerViewModel(LevelDesignerModel& InModel)
+        : Model(InModel)
+    {
+    }
+
+    void LevelDesignerViewModel::SelectObject(const std::shared_ptr<WorldObject>& Object)
+    {
+        Model.SetSelectedObject(Object);
+    }
+
+    std::shared_ptr<WorldObject> LevelDesignerViewModel::GetSelectedObject() const
+    {
+        return Model.GetSelectedObject();
+    }
+
+    bool LevelDesignerViewModel::IsObjectSelected(const WorldObject* Object) const
+    {
+        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        return Selected && Selected.get() == Object;
+    }
+
+    bool LevelDesignerViewModel::IsGridVisible() const
+    {
+        return Model.IsGridVisible();
+    }
+
+    void LevelDesignerViewModel::ToggleGrid()
+    {
+        Model.ToggleGrid();
+    }
+
+    std::string LevelDesignerViewModel::GetObjectDisplayName(const WorldObject* Object) const
+    {
+        if (!Object)
+            return "[Null]";
+
+        return Object->GetName().empty() ? "[Unnamed]" : Object->GetName();
+    }
+
+    std::shared_ptr<TileMapComponent> LevelDesignerViewModel::GetSelectedTileMap() const
+    {
+        return Model.GetSelectedTileMap();
+    }
+
+    void LevelDesignerViewModel::SelectTile(int TileSheetIndex, TileRectCoord Rect)
+    {
+        Model.SelectTile(TileSheetIndex, Rect);
+    }
+
+    TileSelection LevelDesignerViewModel::GetCurrentSelection() const
+    {
+        return Model.GetCurrentSelection();
+    }
+
+    int LevelDesignerViewModel::GetCurrentTileSheetIndex() const
+    {
+        return Model.GetCurrentTileSheetIndex();
+    }
+
+    void LevelDesignerViewModel::SetTileSheetIndex(int Index)
+    {
+        Model.SetTileSheetIndex(Index);
+    }
+
+    int LevelDesignerViewModel::GetTileSheetColumns(int TileSheetIndex) const
+    {
+        return Model.GetTileSheetColumns(TileSheetIndex);
+    }
+
+    uint LevelDesignerViewModel::GetCurrentLayer() const
+    {
+        return Model.GetCurrentLayer();
+    }
+
+    void LevelDesignerViewModel::SetCurrentLayer(uint Layer)
+    {
+        Model.SetCurrentLayer(Layer);
+    }
+
+    std::shared_ptr<WorldObject> LevelDesignerViewModel::CreateNewObject()
+    {
+        std::shared_ptr<WorldObject> NewObject = Model.CreateObject();
+        NewObject->SetTag(ObjectTag::Game);
+        NewObject->SetName("New Object");
+        NewObject->Components().Add<TransformComponent>();
+
+        SelectObject(NewObject);
+
+        return NewObject;
+    }
+
+    void LevelDesignerViewModel::DeleteSelectedObject()
+    {
+        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        if (Selected)
+        {
+            Model.RemoveObject(Selected);
+            Model.SetSelectedObject(nullptr);
+        }
+    }
+
+    void LevelDesignerViewModel::MoveSelectedObjectUp()
+    {
+        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        if (Selected)
+        {
+            Model.MoveObjectUp(Selected);
+        }
+    }
+
+    void LevelDesignerViewModel::MoveSelectedObjectDown()
+    {
+        const std::shared_ptr<WorldObject> Selected = Model.GetSelectedObject();
+        if (Selected)
+        {
+            Model.MoveObjectDown(Selected);
+        }
+    }
+
+    std::vector<std::shared_ptr<WorldObject>> LevelDesignerViewModel::GetGameObjects() const
+    {
+        std::vector<std::shared_ptr<WorldObject>> GameObjects;
+
+        for (const std::shared_ptr<WorldObject>& Obj : Model.GetAllObjects())
+        {
+            if (Obj && Obj->GetTag() == ObjectTag::Game)
+            {
+                GameObjects.push_back(Obj);
+            }
+        }
+
+        return GameObjects;
+    }
+
+    std::vector<std::string> LevelDesignerViewModel::GetAvailableScenes() const
+    {
+        return Model.GetAvailableScenes();
+    }
+
+    void LevelDesignerViewModel::RequestExitToMainMenu()
+    {
+        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
+        if (AllObjects.empty())
+            return;
+
+        const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
+        if (!Context || !Context->SystemsRegistry)
+            return;
+
+        const std::shared_ptr<SceneManagerSystem> SceneManager =
+            Context->SystemsRegistry->GetCoreSystem<SceneManagerSystem>();
+        if (SceneManager)
+        {
+            SceneManager->RequestPop();
+        }
+    }
+
+    std::vector<std::shared_ptr<const TileSheet>> LevelDesignerViewModel::GetAllTileSheets() const
+    {
+        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
+        if (AllObjects.empty())
+            return {};
+
+        const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
+        if (!Context || !Context->SystemsRegistry)
+            return {};
+
+        const std::shared_ptr<AssetRegistrySystem> AssetRegistry =
+            Context->SystemsRegistry->GetCoreSystem<AssetRegistrySystem>();
+        if (!AssetRegistry)
+            return {};
+
+        return AssetRegistry->GetAllTileSheets();
+    }
+
+    sf::RenderWindow& LevelDesignerViewModel::GetWindow() const
+    {
+        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
+        if (!AllObjects.empty())
+        {
+            const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
+            if (Context && Context->Window)
+            {
+                return *Context->Window;
+            }
+        }
+
+        static sf::RenderWindow DummyWindow;
+        return DummyWindow;
+    }
+
+    sf::Vector2u LevelDesignerViewModel::GetWindowSize() const
+    {
+        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
+        if (!AllObjects.empty())
+        {
+            const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
+            if (Context)
+            {
+                return Context->WindowSize;
+            }
+        }
+
+        return sf::Vector2u(0, 0);
+    }
+}
