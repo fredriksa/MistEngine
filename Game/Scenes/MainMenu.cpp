@@ -10,7 +10,7 @@
 #include "../../Core/World/WorldConstants.h"
 
 #include "imgui.h"
-#include "LevelDesigner.h"
+#include "../../Core/Editor/LevelDesignerScene.h"
 
 namespace Core
 {
@@ -92,7 +92,7 @@ namespace Game
 
     void MainMenuScene::EnterLevelDesigner()
     {
-        Context->SystemsRegistry->GetCoreSystem<Core::SceneManagerSystem>()->Push<Game::LevelDesignerScene>();
+        Context->SystemsRegistry->GetCoreSystem<Core::SceneManagerSystem>()->Push<Core::LevelDesignerScene>();
     }
 
     void MainMenuScene::Shutdown()

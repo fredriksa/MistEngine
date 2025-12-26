@@ -1,4 +1,4 @@
-﻿#include "LevelDesigner.h"
+﻿#include "LevelDesignerScene.h"
 
 #include "imgui.h"
 #include <algorithm>
@@ -9,23 +9,23 @@
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/OpenGL.hpp>
 #include <unordered_map>
-#include "../../Components/CameraComponent.h"
-#include "../../Components/TileMapComponent.h"
-#include "../../Components/TransformComponent.h"
-#include "../../Controllers/LevelEditorController.h"
-#include "../../SystemsRegistry.hpp"
-#include "../../Systems/SceneManagerSystem.h"
-#include "../../Systems/AssetRegistrySystem.h"
-#include "../../Core/Scene/SceneLoader.h"
-#include "../../Core/Utils/StringUtils.h"
+#include "../Components/CameraComponent.h"
+#include "../Components/TileMapComponent.h"
+#include "../Components/TransformComponent.h"
+#include "../Controllers/LevelEditorController.h"
+#include "../SystemsRegistry.hpp"
+#include "../Systems/SceneManagerSystem.h"
+#include "../Systems/AssetRegistrySystem.h"
+#include "../Scene/SceneLoader.h"
+#include "../Utils/StringUtils.h"
 #include <fstream>
-#include "../../Core/Editor/EditorConstants.h"
-#include "../../Core/Editor/ComponentEditorRegistry.h"
-#include "../../Core/TileMap/TileSheet.h"
-#include "../../Core/TileMap/TileMap.h"
-#include "../../Core/World/ComponentManager.h"
+#include "EditorConstants.h"
+#include "ComponentEditorRegistry.h"
+#include "../TileMap/TileSheet.h"
+#include "../TileMap/TileMap.h"
+#include "../World/ComponentManager.h"
 
-namespace Game
+namespace Core
 {
     void SceneInfo::SetPath(const std::string& InPath)
     {
@@ -832,7 +832,8 @@ namespace Game
             ImGui::PopID();
         }
 
-        if (ImGui::BeginPopupContextWindow("HierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+        if (ImGui::BeginPopupContextWindow("HierarchyContextMenu",
+                                           ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
             if (ImGui::MenuItem("Create Object"))
             {

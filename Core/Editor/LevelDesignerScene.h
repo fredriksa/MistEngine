@@ -2,17 +2,17 @@
 
 #include <SFML/Graphics/Rect.hpp>
 
-#include "../../Core/Common.h"
-#include "../../Core/Coordinates/TypedRect.hpp"
-#include "../../Core/Coordinates/WindowCoordinate.h"
-#include "../../Scene/Scene.h"
+#include "../Common.h"
+#include "../Coordinates/TypedRect.hpp"
+#include "../Coordinates/WindowCoordinate.h"
+#include "../Scene/Scene.h"
 
 namespace Core
 {
     class TileMapComponent;
 }
 
-namespace Game
+namespace Core
 {
     class SceneInfo
     {

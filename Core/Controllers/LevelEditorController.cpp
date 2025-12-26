@@ -1,5 +1,5 @@
 #include "LevelEditorController.h"
-#include "../../Game/Scenes/LevelDesigner.h"
+#include "../Editor/LevelDesignerScene.h"
 #include "../Components/CameraComponent.h"
 #include "../Components/ComponentRegistry.h"
 #include "../Components/TileMapComponent.h"
@@ -15,12 +15,12 @@
 #include "imgui.h"
 #include <algorithm>
 
-namespace Game
+namespace Core
 {
     REGISTER_COMPONENT(LevelEditorController);
 
     LevelEditorController::LevelEditorController(const std::shared_ptr<Core::WorldObject>& Owner, std::shared_ptr<Core::EngineContext> Context)
-        : Controller(Owner, std::move(Context), Core::InputSource::KeyboardMouse, "LevelEditorController")
+        : Controller(Owner, std::move(Context), InputSource::KeyboardMouse, "LevelEditorController")
     {
     }
 
@@ -28,7 +28,7 @@ namespace Game
     {
         Camera = GetOwner()->Components().Get<Core::CameraComponent>();
 
-        if (std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock())
+        if (std::shared_ptr<CameraComponent> CamPtr = Camera.lock())
         {
             CamPtr->SetZoom(InitialZoom);
         }
@@ -40,10 +40,10 @@ namespace Game
 
         if (std::shared_ptr<Core::WorldObject> TileMapObject = GetOwner()->GetWorld()->Objects().GetByName("TileMap"))
         {
-            TileMap = TileMapObject->Components().Get<Core::TileMapComponent>();
+            TileMap = TileMapObject->Components().Get<TileMapComponent>();
         }
 
-        if (std::shared_ptr<Core::SceneManagerSystem> SceneManager = GetContext().SystemsRegistry->GetCoreSystem<
+        if (std::shared_ptr<SceneManagerSystem> SceneManager = GetContext().SystemsRegistry->GetCoreSystem<
             Core::SceneManagerSystem>())
         {
             Scene = std::dynamic_pointer_cast<LevelDesignerScene>(SceneManager->GetActiveScene());
@@ -57,7 +57,7 @@ namespace Game
             return;
         }
 
-        Core::WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
+        WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
 
         if (Event.button == sf::Mouse::Button::Left)
         {
@@ -66,8 +66,8 @@ namespace Game
         }
         else if (Event.button == sf::Mouse::Button::Middle)
         {
-            std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
-            std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+            std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+            std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
                 Core::CoordinateProjectionSystem>();
 
             if (!CamPtr || !Projector)
@@ -92,7 +92,7 @@ namespace Game
 
     void LevelEditorController::OnMouseMoved(const sf::Event::MouseMoved& Event)
     {
-        Core::WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
+        WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
         LastMousePosition = WindowCoords;
 
         if (bIsPainting)
@@ -102,16 +102,16 @@ namespace Game
 
         if (bIsPanning)
         {
-            std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
-            std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+            std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+            std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
                 Core::CoordinateProjectionSystem>();
 
             if (!CamPtr || !Projector)
                 return;
 
-            Core::WorldCoordinate CurrentWorldPos = Projector->WindowToWorld(WindowCoords, CamPtr->GetView());
+            WorldCoordinate CurrentWorldPos = Projector->WindowToWorld(WindowCoords, CamPtr->GetView());
 
-            Core::WorldCoordinate Delta = LastPanWorldPos - CurrentWorldPos;
+            WorldCoordinate Delta = LastPanWorldPos - CurrentWorldPos;
 
             GetOwner()->Transform()->Position += Delta.Value;
 
@@ -121,19 +121,19 @@ namespace Game
 
     void LevelEditorController::OnMouseWheelScrolled(const sf::Event::MouseWheelScrolled& Event)
     {
-        std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
-        std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+        std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
             Core::CoordinateProjectionSystem>();
 
         if (!CamPtr || !ScenePtr || !Projector)
             return;
 
-        Core::WindowCoordinate MousePos(Event.position.x, Event.position.y);
+        WindowCoordinate MousePos(Event.position.x, Event.position.y);
 
         if (!ScenePtr->IsClickInCanvas(MousePos))
             return;
-        Core::WorldCoordinate WorldPosBeforeZoom = Projector->WindowToWorld(MousePos, CamPtr->GetView());
+        WorldCoordinate WorldPosBeforeZoom = Projector->WindowToWorld(MousePos, CamPtr->GetView());
 
         float CurrentZoom = CamPtr->GetZoom();
         float NewZoom = CurrentZoom * (1.0f - Event.delta * 0.1f);
@@ -141,8 +141,8 @@ namespace Game
 
         CamPtr->SetZoom(NewZoom);
 
-        Core::WorldCoordinate WorldPosAfterZoom = Projector->WindowToWorld(MousePos, CamPtr->GetView());
-        Core::WorldCoordinate Delta = WorldPosBeforeZoom - WorldPosAfterZoom;
+        WorldCoordinate WorldPosAfterZoom = Projector->WindowToWorld(MousePos, CamPtr->GetView());
+        WorldCoordinate Delta = WorldPosBeforeZoom - WorldPosAfterZoom;
 
         GetOwner()->Transform()->Position += Delta.Value;
     }
@@ -150,7 +150,7 @@ namespace Game
     void LevelEditorController::OnKeyPressed(const sf::Event::KeyPressed& Event)
     {
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
-        std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
 
         if (!ScenePtr)
             return;
@@ -196,31 +196,31 @@ namespace Game
         }
     }
 
-    void LevelEditorController::PaintTileAtMousePosition(Core::WindowCoordinate MousePos)
+    void LevelEditorController::PaintTileAtMousePosition(WindowCoordinate MousePos)
     {
-        std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
-        std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+        std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
             Core::CoordinateProjectionSystem>();
 
         if (!CamPtr || !ScenePtr || !Projector)
             return;
 
-        std::shared_ptr<Core::TileMapComponent> TileMapPtr = ScenePtr->GetSelectedTileMap();
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetSelectedTileMap();
         if (!TileMapPtr)
             return;
 
         if (!ScenePtr->IsClickInCanvas(MousePos))
             return;
 
-        Core::WorldCoordinate WorldCoords = Projector->WindowToWorld(MousePos, CamPtr->GetView());
-        Core::WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
-        Core::TileCoordinate TileCoords = Projector->WorldToTile(LocalCoords);
+        WorldCoordinate WorldCoords = Projector->WindowToWorld(MousePos, CamPtr->GetView());
+        WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
+        TileCoordinate TileCoords = Projector->WorldToTile(LocalCoords);
 
         if (!TileCoords.IsValid())
             return;
 
-        Game::TileSelection Selection = ScenePtr->GetCurrentSelection();
+        TileSelection Selection = ScenePtr->GetCurrentSelection();
         if (!Selection.IsValid())
             return;
 
@@ -243,36 +243,36 @@ namespace Game
 
                 int TileIndex = Selection.GetTileIndex(sf::Vector2i(OffsetX, OffsetY), TileSheetColumns);
                 TileMapPtr->GetTileMap().SetTile(TargetX, TargetY, CurrentLayer,
-                    Core::Tile(Selection.TileSheetIndex.value(), TileIndex));
+                    Tile(Selection.TileSheetIndex.value(), TileIndex));
             }
         }
     }
 
-    void LevelEditorController::DeleteTileAtMousePosition(Core::WindowCoordinate MousePos)
+    void LevelEditorController::DeleteTileAtMousePosition(WindowCoordinate MousePos)
     {
-        std::shared_ptr<Core::CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
-        std::shared_ptr<Core::CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+        std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
             Core::CoordinateProjectionSystem>();
 
         if (!CamPtr || !ScenePtr || !Projector)
             return;
 
-        std::shared_ptr<Core::TileMapComponent> TileMapPtr = ScenePtr->GetSelectedTileMap();
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetSelectedTileMap();
         if (!TileMapPtr)
             return;
 
         if (!ScenePtr->IsClickInCanvas(MousePos))
             return;
 
-        Core::WorldCoordinate WorldCoords = Projector->WindowToWorld(MousePos, CamPtr->GetView());
-        Core::WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
-        Core::TileCoordinate TileCoords = Projector->WorldToTile(LocalCoords);
+        WorldCoordinate WorldCoords = Projector->WindowToWorld(MousePos, CamPtr->GetView());
+        WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
+        TileCoordinate TileCoords = Projector->WorldToTile(LocalCoords);
 
         if (!TileCoords.IsValid())
             return;
 
         Core::uint CurrentLayer = ScenePtr->GetCurrentLayer();
-        TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), CurrentLayer, Core::Tile());
+        TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), CurrentLayer, Tile());
     }
 }

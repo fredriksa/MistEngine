@@ -8,13 +8,9 @@ namespace Core
 {
     class CameraComponent;
     class TileMapComponent;
-}
-
-namespace Game
-{
     class LevelDesignerScene;
 
-    class LevelEditorController : public Core::Controller
+    class LevelEditorController : public Controller
     {
     public:
         LevelEditorController(const std::shared_ptr<Core::WorldObject>& Owner, std::shared_ptr<Core::EngineContext> Context);
@@ -28,17 +24,17 @@ namespace Game
         void OnKeyPressed(const sf::Event::KeyPressed& Event) override;
 
     private:
-        void PaintTileAtMousePosition(Core::WindowCoordinate MousePos);
-        void DeleteTileAtMousePosition(Core::WindowCoordinate MousePos);
+        void PaintTileAtMousePosition(WindowCoordinate MousePos);
+        void DeleteTileAtMousePosition(WindowCoordinate MousePos);
 
-        std::weak_ptr<Core::CameraComponent> Camera;
+        std::weak_ptr<CameraComponent> Camera;
         std::weak_ptr<LevelDesignerScene> Scene;
-        std::weak_ptr<Core::TileMapComponent> TileMap;
+        std::weak_ptr<TileMapComponent> TileMap;
 
         bool bIsPanning = false;
         bool bIsPainting = false;
-        Core::WindowCoordinate LastMousePosition{0, 0};
-        Core::WorldCoordinate LastPanWorldPos;
+        WindowCoordinate LastMousePosition{0, 0};
+        WorldCoordinate LastPanWorldPos;
 
         sf::Vector2f InitialCameraPosition{0.0f, 0.0f};
         float InitialZoom = 0.25f;
