@@ -35,7 +35,7 @@ namespace Game
 
     void MainMenuScene::PreRender()
     {
-        for (const auto& Obj : World.GetAllObjects())
+        for (const auto& Obj : World.Objects().GetAll())
         {
             if (!Obj)
                 continue;
@@ -105,7 +105,7 @@ namespace Game
         std::shared_ptr<Core::WorldObject> CameraObject;
         std::shared_ptr<Core::TileMapComponent> TileMap;
 
-        for (const auto& Obj : World.GetAllObjects())
+        for (const auto& Obj : World.Objects().GetAll())
         {
             if (!Obj)
                 continue;

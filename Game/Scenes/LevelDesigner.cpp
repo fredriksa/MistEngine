@@ -82,7 +82,7 @@ namespace Game
 
     void LevelDesignerScene::CreateEditorInfrastructure()
     {
-        std::shared_ptr<Core::WorldObject> CameraObj = World.CreateObject();
+        std::shared_ptr<Core::WorldObject> CameraObj = World.Objects().CreateObject();
         CameraObj->SetName("EditorCamera");
         CameraObj->SetTag(Core::ObjectTag::Editor);
         CameraObj->Components().Add<Core::TransformComponent>();
@@ -90,7 +90,7 @@ namespace Game
         Camera->SetZoom(0.25f);
         CameraObj->Components().Add<LevelEditorController>();
 
-        // std::shared_ptr<Core::WorldObject> TileMapObj = World.CreateObject();
+        // std::shared_ptr<Core::WorldObject> TileMapObj = World.Objects().CreateObject();
         // TileMapObj->SetName("TileMap");
         // TileMapObj->SetTag(Core::ObjectTag::Game);
         // Core::TileMapComponent* TileMapComp = TileMapObj->Components().Add<Core::TileMapComponent>();
@@ -103,7 +103,7 @@ namespace Game
 
         CanvasRect = CalculateCanvasRect();
 
-        if (std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera"))
+        if (std::shared_ptr<Core::WorldObject> CameraObject = World.Objects().GetByName("EditorCamera"))
         {
             if (std::shared_ptr<Core::CameraComponent> Camera = CameraObject->Components().Get<Core::CameraComponent>())
             {
@@ -134,7 +134,7 @@ namespace Game
             {
                 if (ImGui::MenuItem("New Scene", "Ctrl+N"))
                 {
-                    World.ClearGameObjects();
+                    World.Objects().Clear();
                     SelectedObject.reset();
                     CurrentScene.Clear();
                 }
@@ -780,7 +780,7 @@ namespace Game
         float HierarchyHeight = ImGui::GetContentRegionAvail().y * 0.4f;
         ImGui::BeginChild("HierarchyList", ImVec2(0, HierarchyHeight), true);
 
-        const std::vector<std::shared_ptr<Core::WorldObject>>& AllObjects = World.GetAllObjects();
+        const std::vector<std::shared_ptr<Core::WorldObject>>& AllObjects = World.Objects().GetAll();
 
         std::shared_ptr<Core::WorldObject> SelectedPtr = SelectedObject.lock();
 
@@ -811,7 +811,7 @@ namespace Game
             {
                 if (ImGui::MenuItem("Delete"))
                 {
-                    World.RemoveObject(Obj);
+                    World.Objects().Remove(Obj);
                     SelectedObject.reset();
                 }
                 ImGui::EndPopup();
@@ -820,13 +820,13 @@ namespace Game
             ImGui::SameLine();
             if (ImGui::SmallButton("^"))
             {
-                World.MoveObjectUp(Obj);
+                World.Objects().MoveUp(Obj);
             }
 
             ImGui::SameLine();
             if (ImGui::SmallButton("v"))
             {
-                World.MoveObjectDown(Obj);
+                World.Objects().MoveDown(Obj);
             }
 
             ImGui::PopID();
@@ -836,7 +836,7 @@ namespace Game
         {
             if (ImGui::MenuItem("Create Object"))
             {
-                std::shared_ptr<Core::WorldObject> NewObject = World.CreateObject();
+                std::shared_ptr<Core::WorldObject> NewObject = World.Objects().CreateObject();
                 NewObject->SetTag(Core::ObjectTag::Game);
                 NewObject->SetName("New Object");
                 NewObject->Components().Add<Core::TransformComponent>();
@@ -1157,7 +1157,7 @@ namespace Game
 
     Core::Task<> LevelDesignerScene::OpenScene(const std::string& SceneName)
     {
-        World.ClearGameObjects();
+        World.Objects().Clear();
         SelectedObject.reset();
 
         Core::SceneLoader Loader(Context);
@@ -1171,7 +1171,7 @@ namespace Game
 
     void LevelDesignerScene::ZoomIn()
     {
-        std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+        std::shared_ptr<Core::WorldObject> CameraObject = World.Objects().GetByName("EditorCamera");
         if (!CameraObject)
             return;
 
@@ -1187,7 +1187,7 @@ namespace Game
 
     void LevelDesignerScene::ZoomOut()
     {
-        std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+        std::shared_ptr<Core::WorldObject> CameraObject = World.Objects().GetByName("EditorCamera");
         if (!CameraObject)
             return;
 
@@ -1203,7 +1203,7 @@ namespace Game
 
     void LevelDesignerScene::ResetView()
     {
-        std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+        std::shared_ptr<Core::WorldObject> CameraObject = World.Objects().GetByName("EditorCamera");
         if (!CameraObject)
             return;
 
@@ -1223,7 +1223,7 @@ namespace Game
         if (!bShowGrid)
             return;
 
-        std::shared_ptr<Core::WorldObject> CameraObject = World.GetObjectByName("EditorCamera");
+        std::shared_ptr<Core::WorldObject> CameraObject = World.Objects().GetByName("EditorCamera");
         if (!CameraObject)
             return;
 

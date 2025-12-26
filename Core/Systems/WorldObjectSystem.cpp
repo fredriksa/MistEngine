@@ -17,7 +17,7 @@ namespace Core
     std::shared_ptr<WorldObject> WorldObjectSystem::Create(World* TargetWorld, const DataAsset& DataAsset,
                                                            const nlohmann::json& OverrideValues)
     {
-        std::shared_ptr<WorldObject> WorldObj = TargetWorld->CreateObject();
+        std::shared_ptr<WorldObject> WorldObj = TargetWorld->Objects().CreateObject();
 
         for (const ComponentData& AssetComponentData : DataAsset.Components)
         {
@@ -76,7 +76,7 @@ namespace Core
 
     std::shared_ptr<WorldObject> WorldObjectSystem::Create(World* TargetWorld, const nlohmann::json& ObjectData)
     {
-        std::shared_ptr<WorldObject> WorldObj = TargetWorld->CreateObject();
+        std::shared_ptr<WorldObject> WorldObj = TargetWorld->Objects().CreateObject();
 
         if (ObjectData.contains("components") && ObjectData["components"].is_array())
         {

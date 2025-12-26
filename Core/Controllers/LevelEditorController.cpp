@@ -38,7 +38,7 @@ namespace Game
             InitialCameraPosition = GetOwner()->Transform()->Position;
         }
 
-        if (std::shared_ptr<Core::WorldObject> TileMapObject = GetOwner()->GetWorld()->GetObjectByName("TileMap"))
+        if (std::shared_ptr<Core::WorldObject> TileMapObject = GetOwner()->GetWorld()->Objects().GetByName("TileMap"))
         {
             TileMap = TileMapObject->Components().Get<Core::TileMapComponent>();
         }

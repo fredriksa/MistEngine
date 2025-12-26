@@ -4,6 +4,7 @@
 
 #include "../EngineContext.hpp"
 #include "../World/World.h"
+#include "../World/WorldObject.h"
 #include "../Assets/AssetLoader.h"
 #include "../Assets/AssetManifest.h"
 #include "../Assets/DataAsset.h"

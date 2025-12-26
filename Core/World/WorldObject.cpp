@@ -14,14 +14,14 @@ namespace Core
     {
         if (OwningWorld && !Name.empty())
         {
-            OwningWorld->UnregisterObjectName(Name);
+            OwningWorld->Objects().UnregisterName(Name);
         }
 
         Name = InName;
 
         if (OwningWorld && !Name.empty())
         {
-            OwningWorld->RegisterObjectName(Name, shared_from_this());
+            OwningWorld->Objects().RegisterName(Name, shared_from_this());
         }
     }
 
