@@ -30,11 +30,30 @@ namespace Game
 
     void MainMenuScene::OnEnter()
     {
+        bool bHasCamera = false;
+        for (const auto& Obj : World.Objects().GetAll())
+        {
+            if (Obj && Obj->Components().Get<Core::CameraComponent>())
+            {
+                bHasCamera = true;
+                break;
+            }
+        }
+
+        if (!bHasCamera)
+        {
+            std::shared_ptr<Core::WorldObject> CameraObj = World.Objects().CreateObject();
+            CameraObj->SetName("MainMenuCamera");
+            CameraObj->Components().Add<Core::TransformComponent>();
+            CameraObj->Components().Add<Core::CameraComponent>();
+        }
+
         ZoomCameraToFitTileMap();
     }
 
     void MainMenuScene::PreRender()
     {
+        bool bCameraFound = false;
         for (const auto& Obj : World.Objects().GetAll())
         {
             if (!Obj)
@@ -43,8 +62,14 @@ namespace Game
             if (std::shared_ptr<Core::CameraComponent> Camera = Obj->Components().Get<Core::CameraComponent>())
             {
                 Context->Renderer->setView(Camera->GetView());
+                bCameraFound = true;
                 break;
             }
+        }
+
+        if (!bCameraFound)
+        {
+            Context->Renderer->setView(Context->Renderer->getDefaultView());
         }
     }
 

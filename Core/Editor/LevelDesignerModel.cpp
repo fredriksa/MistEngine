@@ -146,6 +146,11 @@ namespace Core
         return Scenes;
     }
 
+    bool LevelDesignerModel::CanPlayTest() const
+    {
+        return CurrentScene.IsValid();
+    }
+
     void LevelDesignerModel::SelectTile(int TileSheetIndex, TileRectCoord Rect)
     {
         CurrentSelection.TileSheetIndex = static_cast<uint>(TileSheetIndex);

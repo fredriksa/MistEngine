@@ -13,6 +13,7 @@
 #include "../SystemsRegistry.hpp"
 #include "../Systems/AssetRegistrySystem.h"
 #include "../Systems/SceneManagerSystem.h"
+#include "../Scene/PlayTestScene.h"
 #include "../TileMap/TileSheet.h"
 #include "../TileMap/TileMap.h"
 #include "../World/World.h"
@@ -90,8 +91,43 @@ namespace Core
             }
 
             const float MenuBarHeight = ImGui::GetWindowSize().y;
+            const float PlayButtonWidth = 80.0f;
             const float BackButtonWidth = 80.0f;
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - BackButtonWidth);
+            const float TotalButtonWidth = PlayButtonWidth + BackButtonWidth;
+
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - TotalButtonWidth);
+
+            const bool bCanPlayTest = ViewModel.CanPlayTest();
+            if (!bCanPlayTest)
+            {
+                ImGui::BeginDisabled();
+            }
+
+            if (ImGui::Button("Play", ImVec2(PlayButtonWidth - 10, MenuBarHeight - 4)))
+            {
+                ViewModel.GetModel().SaveScene();
+
+                const std::string SceneName = ViewModel.GetModel().GetCurrentScene().GetName();
+                if (!SceneName.empty())
+                {
+                    if (std::shared_ptr<SceneManagerSystem> SceneManager = ViewModel.GetModel().GetContext()->SystemsRegistry->GetCoreSystem<SceneManagerSystem>())
+                    {
+                        SceneManager->Push<PlayTestScene>(SceneName);
+                    }
+                }
+            }
+
+            if (!bCanPlayTest && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            {
+                ImGui::SetTooltip("Save the scene first (File > Save)");
+            }
+
+            if (!bCanPlayTest)
+            {
+                ImGui::EndDisabled();
+            }
+
+            ImGui::SameLine();
             if (ImGui::Button("Back", ImVec2(BackButtonWidth - 10, MenuBarHeight - 4)))
             {
                 ViewModel.RequestExitToMainMenu();

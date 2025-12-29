@@ -94,6 +94,7 @@ namespace Core
 
         const SceneInfo& GetCurrentScene() const { return CurrentScene; }
         std::vector<std::string> GetAvailableScenes() const;
+        bool CanPlayTest() const;
 
         void SelectTile(int TileSheetIndex, TileRectCoord Rect);
         TileSelection GetCurrentSelection() const { return CurrentSelection; }

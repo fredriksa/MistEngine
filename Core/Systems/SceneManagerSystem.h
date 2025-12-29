@@ -16,9 +16,9 @@ namespace Core
         SceneManagerSystem(std::shared_ptr<EngineContext> InContext);
         ~SceneManagerSystem() override = default;
 
-        template <typename T>
+        template <typename T, typename... Args>
             requires IsScene<T>
-        void Push();
+        void Push(Args&&... args);
 
         void RequestPop();
 
@@ -36,10 +36,10 @@ namespace Core
         bool bPopRequested = false;
     };
 
-    template <typename T> requires IsScene<T>
-    void SceneManagerSystem::Push()
+    template <typename T, typename... Args> requires IsScene<T>
+    void SceneManagerSystem::Push(Args&&... args)
     {
-        auto NewScene = std::make_shared<T>(GetContext());
+        auto NewScene = std::make_shared<T>(GetContext(), std::forward<Args>(args)...);
         Scenes.push(NewScene);
         ActiveScene = Scenes.top();
 

@@ -65,6 +65,7 @@ namespace Core
 
         std::vector<std::shared_ptr<WorldObject>> GetGameObjects() const;
         std::vector<std::string> GetAvailableScenes() const;
+        bool CanPlayTest() const;
 
         void RequestExitToMainMenu();
         std::vector<std::shared_ptr<const TileSheet>> GetAllTileSheets() const;

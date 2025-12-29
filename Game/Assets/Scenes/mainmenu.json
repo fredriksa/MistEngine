@@ -4,30 +4,6 @@
             "components": [
                 {
                     "data": {},
-                    "type": "CameraComponent"
-                },
-                {
-                    "data": {},
-                    "type": "TransformComponent"
-                }
-            ]
-        },
-        {
-            "components": [
-                {
-                    "data": {},
-                    "type": "SpriteComponent"
-                },
-                {
-                    "data": {},
-                    "type": "TransformComponent"
-                }
-            ]
-        },
-        {
-            "components": [
-                {
-                    "data": {},
                     "type": "TransformComponent"
                 },
                 {
@@ -9858,6 +9834,28 @@
         }
     ],
     "worldEnvironment": {
+        "colors": {
+            "day": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "night": [
+                0.2549999952316284,
+                0.2549999952316284,
+                0.42500001192092896
+            ],
+            "sunrise": [
+                1.0,
+                0.6000000238418579,
+                0.4000000059604645
+            ],
+            "sunset": [
+                1.0,
+                0.6000000238418579,
+                0.4000000059604645
+            ]
+        },
         "staticTime": false,
         "time": {
             "hours": 6,

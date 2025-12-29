@@ -157,6 +157,11 @@ namespace Core
         return Model.GetAvailableScenes();
     }
 
+    bool LevelDesignerViewModel::CanPlayTest() const
+    {
+        return Model.CanPlayTest();
+    }
+
     void LevelDesignerViewModel::RequestExitToMainMenu()
     {
         const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
