@@ -24,8 +24,10 @@ namespace Core
         void OnKeyPressed(const sf::Event::KeyPressed& Event) override;
 
     private:
-        void PaintTileAtMousePosition(WindowCoordinate MousePos);
-        void DeleteTileAtMousePosition(WindowCoordinate MousePos);
+        void PaintTile(WindowCoordinate MousePos);
+        void DeleteTile(WindowCoordinate MousePos);
+        void EyedropperTile(WindowCoordinate MousePos);
+        void FloodFill(WindowCoordinate MousePos);
 
         std::weak_ptr<CameraComponent> Camera;
         std::weak_ptr<LevelDesignerScene> Scene;

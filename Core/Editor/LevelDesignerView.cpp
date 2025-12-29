@@ -343,6 +343,7 @@ namespace Core
                             DragStartRow = Row;
                             ViewModel.SelectTile(CurrentIndex,
                                                  TileRectCoord(TileCoordinate(Column, Row), TileCoordinate(1, 1)));
+                            ViewModel.GetModel().SetCurrentTool(EditorTool::Brush);
                         }
 
                         if (bIsHovered && bIsDraggingTileSelection)
@@ -456,24 +457,105 @@ namespace Core
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
 
         const bool bHasTileMap = ViewModel.GetSelectedTileMap() != nullptr;
+        const EditorTool CurrentTool = ViewModel.GetModel().GetCurrentTool();
 
-        if (!bHasTileMap)
+        if (!bHasTileMap && (CurrentTool == EditorTool::Brush ||
+                             CurrentTool == EditorTool::Fill ||
+                             CurrentTool == EditorTool::Eraser ||
+                             CurrentTool == EditorTool::Eyedropper))
         {
-            ImGui::BeginDisabled();
+            ViewModel.GetModel().SetCurrentTool(EditorTool::Select);
         }
 
-        if (ImGui::Button("Layers"))
+        if (bHasTileMap)
         {
-            ViewModel.SetLayersPanelOpen(!ViewModel.IsLayersPanelOpen());
-        }
-
-        if (!bHasTileMap)
-        {
-            ImGui::EndDisabled();
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            if (ImGui::Button("Layers"))
             {
-                ImGui::SetTooltip("No tilemap selected");
+                ViewModel.SetLayersPanelOpen(!ViewModel.IsLayersPanelOpen());
             }
+
+            ImGui::SameLine();
+            ImGui::Spacing();
+            ImGui::SameLine();
+
+            if (CurrentTool == EditorTool::Brush)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+        }
+        if (ImGui::Button("Brush"))
+        {
+            ViewModel.GetModel().SetCurrentTool(EditorTool::Brush);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Brush Tool (B)");
+        }
+        if (CurrentTool == EditorTool::Brush)
+        {
+            ImGui::PopStyleColor(3);
+        }
+
+        ImGui::SameLine();
+        if (CurrentTool == EditorTool::Fill)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+        }
+        if (ImGui::Button("Fill"))
+        {
+            ViewModel.GetModel().SetCurrentTool(EditorTool::Fill);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Fill Tool (F)");
+        }
+        if (CurrentTool == EditorTool::Fill)
+        {
+            ImGui::PopStyleColor(3);
+        }
+
+        ImGui::SameLine();
+        if (CurrentTool == EditorTool::Eraser)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+        }
+        if (ImGui::Button("Eraser"))
+        {
+            ViewModel.GetModel().SetCurrentTool(EditorTool::Eraser);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Eraser Tool (D)");
+        }
+        if (CurrentTool == EditorTool::Eraser)
+        {
+            ImGui::PopStyleColor(3);
+        }
+
+        ImGui::SameLine();
+        if (CurrentTool == EditorTool::Eyedropper)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+        }
+        if (ImGui::Button("Eyedropper"))
+        {
+            ViewModel.GetModel().SetCurrentTool(EditorTool::Eyedropper);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Eyedropper Tool (E)");
+        }
+        if (CurrentTool == EditorTool::Eyedropper)
+        {
+            ImGui::PopStyleColor(3);
+        }
         }
 
         ImGui::PopStyleVar(2);

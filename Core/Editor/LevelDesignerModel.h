@@ -20,8 +20,11 @@ namespace Core
 
     enum class EditorTool
     {
-        Paint,
-        Select
+        Select,
+        Brush,
+        Fill,
+        Eraser,
+        Eyedropper
     };
 
     enum class GizmoPart

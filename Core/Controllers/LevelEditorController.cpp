@@ -12,6 +12,7 @@
 #include "../World/World.h"
 #include "../World/ComponentManager.h"
 #include "../TileMap/Tile.h"
+#include "../TileMap/TileMap.h"
 #include "imgui.h"
 #include <algorithm>
 
@@ -65,12 +66,27 @@ namespace Core
 
         if (Event.button == sf::Mouse::Button::Left)
         {
-            if (ScenePtr->GetModel().GetCurrentTool() == EditorTool::Paint)
+            EditorTool CurrentTool = ScenePtr->GetModel().GetCurrentTool();
+
+            if (CurrentTool == EditorTool::Brush)
             {
                 bIsPainting = true;
-                PaintTileAtMousePosition(WindowCoords);
+                PaintTile(WindowCoords);
             }
-            else if (ScenePtr->GetModel().GetCurrentTool() == EditorTool::Select)
+            else if (CurrentTool == EditorTool::Eraser)
+            {
+                bIsPainting = true;
+                DeleteTile(WindowCoords);
+            }
+            else if (CurrentTool == EditorTool::Eyedropper)
+            {
+                EyedropperTile(WindowCoords);
+            }
+            else if (CurrentTool == EditorTool::Fill)
+            {
+                FloodFill(WindowCoords);
+            }
+            else if (CurrentTool == EditorTool::Select)
             {
                 std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
                 std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
@@ -197,9 +213,17 @@ namespace Core
 
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
 
-        if (bIsPainting)
+        if (bIsPainting && ScenePtr)
         {
-            PaintTileAtMousePosition(WindowCoords);
+            EditorTool CurrentTool = ScenePtr->GetModel().GetCurrentTool();
+            if (CurrentTool == EditorTool::Brush)
+            {
+                PaintTile(WindowCoords);
+            }
+            else if (CurrentTool == EditorTool::Eraser)
+            {
+                DeleteTile(WindowCoords);
+            }
         }
 
         if (bIsPanning)
@@ -325,21 +349,30 @@ namespace Core
         {
             ScenePtr->GetModel().SetCurrentTool(EditorTool::Select);
         }
-        else if (Event.code == sf::Keyboard::Key::P)
+
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
+        if (TileMapPtr)
         {
-            std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
-            if (TileMapPtr)
+            if (Event.code == sf::Keyboard::Key::B)
             {
-                ScenePtr->GetModel().SetCurrentTool(EditorTool::Paint);
+                ScenePtr->GetModel().SetCurrentTool(EditorTool::Brush);
             }
-        }
-        else if (Event.code == sf::Keyboard::Key::D)
-        {
-            DeleteTileAtMousePosition(LastMousePosition);
+            else if (Event.code == sf::Keyboard::Key::F)
+            {
+                ScenePtr->GetModel().SetCurrentTool(EditorTool::Fill);
+            }
+            else if (Event.code == sf::Keyboard::Key::D)
+            {
+                ScenePtr->GetModel().SetCurrentTool(EditorTool::Eraser);
+            }
+            else if (Event.code == sf::Keyboard::Key::E)
+            {
+                ScenePtr->GetModel().SetCurrentTool(EditorTool::Eyedropper);
+            }
         }
     }
 
-    void LevelEditorController::PaintTileAtMousePosition(WindowCoordinate MousePos)
+    void LevelEditorController::PaintTile(WindowCoordinate MousePos)
     {
         std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
@@ -391,7 +424,7 @@ namespace Core
         }
     }
 
-    void LevelEditorController::DeleteTileAtMousePosition(WindowCoordinate MousePos)
+    void LevelEditorController::DeleteTile(WindowCoordinate MousePos)
     {
         std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
@@ -417,5 +450,124 @@ namespace Core
 
         Core::uint CurrentLayer = ScenePtr->GetModel().GetCurrentLayer();
         TileMapPtr->GetTileMap().SetTile(TileCoords.X(), TileCoords.Y(), CurrentLayer, Tile());
+    }
+
+    void LevelEditorController::EyedropperTile(WindowCoordinate MousePos)
+    {
+        std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
+        std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+            Core::CoordinateProjectionSystem>();
+
+        if (!CamPtr || !ScenePtr || !Projector)
+            return;
+
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
+        if (!TileMapPtr)
+            return;
+
+        if (!ScenePtr->IsClickInCanvas(MousePos))
+            return;
+
+        WorldCoordinate WorldCoords = Projector->WindowToWorld(MousePos, CamPtr->GetView());
+        WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
+        TileCoordinate TileCoords = Projector->WorldToTile(LocalCoords);
+
+        if (!TileCoords.IsValid())
+            return;
+
+        Core::uint CurrentLayer = ScenePtr->GetModel().GetCurrentLayer();
+        Tile SampledTile = TileMapPtr->GetTileMap().GetTile(TileCoords.X(), TileCoords.Y(), CurrentLayer);
+
+        if (SampledTile.IsEmpty())
+            return;
+
+        std::optional<Core::uint> TileSheetIdOpt = SampledTile.GetTileSheetId();
+        if (!TileSheetIdOpt.has_value())
+            return;
+
+        Core::uint TileSheetId = TileSheetIdOpt.value();
+        int TileSheetColumns = ScenePtr->GetModel().GetTileSheetColumns(static_cast<int>(TileSheetId));
+        if (TileSheetColumns == 0)
+            return;
+
+        int Column = SampledTile.GetTileIndex() % TileSheetColumns;
+        int Row = SampledTile.GetTileIndex() / TileSheetColumns;
+
+        ScenePtr->GetModel().SelectTile(static_cast<int>(TileSheetId),
+            TileRectCoord(TileCoordinate(Column, Row), TileCoordinate(1, 1)));
+
+        ScenePtr->GetModel().SetCurrentTool(EditorTool::Brush);
+    }
+
+    void LevelEditorController::FloodFill(WindowCoordinate MousePos)
+    {
+        std::shared_ptr<CameraComponent> CamPtr = Camera.lock();
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
+        std::shared_ptr<CoordinateProjectionSystem> Projector = GetContext().SystemsRegistry->GetCoreSystem<
+            Core::CoordinateProjectionSystem>();
+
+        if (!CamPtr || !ScenePtr || !Projector)
+            return;
+
+        std::shared_ptr<TileMapComponent> TileMapPtr = ScenePtr->GetModel().GetSelectedTileMap();
+        if (!TileMapPtr)
+            return;
+
+        if (!ScenePtr->IsClickInCanvas(MousePos))
+            return;
+
+        TileSelection Selection = ScenePtr->GetModel().GetCurrentSelection();
+        if (!Selection.IsValid() || Selection.SelectionRect.Width() != 1 || Selection.SelectionRect.Height() != 1)
+            return;
+
+        WorldCoordinate WorldCoords = Projector->WindowToWorld(MousePos, CamPtr->GetView());
+        WorldCoordinate LocalCoords = TileMapPtr->GetOwner()->WorldToLocal(WorldCoords);
+        TileCoordinate StartTileCoords = Projector->WorldToTile(LocalCoords);
+
+        if (!StartTileCoords.IsValid())
+            return;
+
+        Core::uint CurrentLayer = ScenePtr->GetModel().GetCurrentLayer();
+        Core::TileMap& TileMapData = TileMapPtr->GetTileMap();
+
+        Tile TargetTile = TileMapData.GetTile(StartTileCoords.X(), StartTileCoords.Y(), CurrentLayer);
+
+        int TileSheetColumns = ScenePtr->GetModel().GetTileSheetColumns(Selection.TileSheetIndex.value());
+        int ReplacementTileIndex = Selection.GetTileIndex(sf::Vector2i(0, 0), TileSheetColumns);
+        Tile ReplacementTile(Selection.TileSheetIndex.value(), ReplacementTileIndex);
+
+        if (TargetTile.GetTileSheetId() == ReplacementTile.GetTileSheetId() &&
+            TargetTile.GetTileIndex() == ReplacementTile.GetTileIndex())
+            return;
+
+        std::vector<TileCoordinate> Stack;
+        Stack.push_back(StartTileCoords);
+
+        while (!Stack.empty())
+        {
+            TileCoordinate Current = Stack.back();
+            Stack.pop_back();
+
+            if (Current.X() >= TileMapData.GetWidth() || Current.Y() >= TileMapData.GetHeight())
+                continue;
+
+            Tile CurrentTile = TileMapData.GetTile(Current.X(), Current.Y(), CurrentLayer);
+
+            if (CurrentTile.GetTileSheetId() != TargetTile.GetTileSheetId() ||
+                CurrentTile.GetTileIndex() != TargetTile.GetTileIndex())
+                continue;
+
+            TileMapData.SetTile(Current.X(), Current.Y(), CurrentLayer, ReplacementTile);
+
+            if (Current.X() > 0)
+                Stack.push_back(TileCoordinate(Current.X() - 1, Current.Y()));
+            if (Current.X() < TileMapData.GetWidth() - 1)
+                Stack.push_back(TileCoordinate(Current.X() + 1, Current.Y()));
+            if (Current.Y() > 0)
+                Stack.push_back(TileCoordinate(Current.X(), Current.Y() - 1));
+            if (Current.Y() < TileMapData.GetHeight() - 1)
+                Stack.push_back(TileCoordinate(Current.X(), Current.Y() + 1));
+        }
     }
 }
