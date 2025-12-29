@@ -10,6 +10,7 @@ namespace Core
         DataAssetRegistrySystem,
         WorldObjectSystem,
         ImGuiSystem,
-        CoordinateProjectionSystem
+        CoordinateProjectionSystem,
+        ShaderPipeline
     };
 }

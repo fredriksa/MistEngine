@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../ThirdParty/json.hpp"
+#include "../World/WorldEnvironment.h"
 
 namespace Core
 {
@@ -27,6 +28,7 @@ namespace Core
         std::vector<AssetEntry> Sounds;
         std::vector<ObjectEntry> Objects;
 
+        static AssetManifest FromJson(const nlohmann::json& Data, const std::string& basePath = "");
         static AssetManifest LoadFromFile(const std::string& path, const std::string& basePath = "");
     };
 }

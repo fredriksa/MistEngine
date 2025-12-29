@@ -13,7 +13,7 @@ namespace Core
     CameraComponent::CameraComponent(const std::shared_ptr<WorldObject>& Owner, std::shared_ptr<EngineContext> Context)
         : Component(Owner, std::move(Context), "CameraComponent")
     {
-        sf::Vector2u WindowSize = GetContext().Window->getSize();
+        const sf::Vector2u WindowSize = GetContext().WindowSize;
         BaseSize = sf::Vector2f(static_cast<float>(WindowSize.x), static_cast<float>(WindowSize.y));
     }
 

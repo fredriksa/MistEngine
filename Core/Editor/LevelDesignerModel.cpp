@@ -443,4 +443,50 @@ namespace Core
 
         return ObjectsInRect;
     }
+
+    void LevelDesignerModel::StartTimePreview()
+    {
+        SavedPreviewHours = WorldRef.GetEnvironment().GetTime().GetHourOfDay();
+        SavedPreviewMinutes = WorldRef.GetEnvironment().GetTime().GetMinutes();
+        bIsPreviewingTime = true;
+        TimePreviewStart = std::chrono::steady_clock::now();
+    }
+
+    void LevelDesignerModel::StopTimePreview()
+    {
+        bIsPreviewingTime = false;
+        WorldRef.GetEnvironment().GetTime().SetTime(SavedPreviewHours, SavedPreviewMinutes);
+    }
+
+    void LevelDesignerModel::UpdateTimePreview()
+    {
+        if (!bIsPreviewingTime)
+            return;
+
+        const auto Now = std::chrono::steady_clock::now();
+        const float Elapsed = std::chrono::duration<float>(Now - TimePreviewStart).count();
+
+        if (Elapsed >= TimePreviewDuration)
+        {
+            StopTimePreview();
+        }
+        else
+        {
+            const float Progress = Elapsed / TimePreviewDuration;
+            const float TotalMinutes = Progress * (24.0f * 60.0f);
+            const int PreviewHours = static_cast<int>(TotalMinutes / 60.0f) % 24;
+            const int PreviewMinutes = static_cast<int>(TotalMinutes) % 60;
+            WorldRef.GetEnvironment().GetTime().SetTime(PreviewHours, PreviewMinutes);
+        }
+    }
+
+    float LevelDesignerModel::GetTimePreviewProgress() const
+    {
+        if (!bIsPreviewingTime)
+            return 0.0f;
+
+        const auto Now = std::chrono::steady_clock::now();
+        const float Elapsed = std::chrono::duration<float>(Now - TimePreviewStart).count();
+        return std::min(Elapsed / TimePreviewDuration, 1.0f);
+    }
 }

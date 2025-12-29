@@ -47,6 +47,6 @@ namespace Core
         {
             Sprite->setPosition(Transform->Position);
         }
-        GetContext().Window->draw(*Sprite);
+        GetContext().Renderer->draw(*Sprite);
     }
 }

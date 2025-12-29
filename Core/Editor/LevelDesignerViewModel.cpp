@@ -193,35 +193,14 @@ namespace Core
         return AssetRegistry->GetAllTileSheets();
     }
 
-    sf::RenderWindow& LevelDesignerViewModel::GetWindow() const
+    sf::RenderTarget& LevelDesignerViewModel::GetRenderer() const
     {
-        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
-        if (!AllObjects.empty())
-        {
-            const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
-            if (Context && Context->Window)
-            {
-                return *Context->Window;
-            }
-        }
-
-        static sf::RenderWindow DummyWindow;
-        return DummyWindow;
+        return *Model.GetContext()->Renderer;
     }
 
     sf::Vector2u LevelDesignerViewModel::GetWindowSize() const
     {
-        const std::vector<std::shared_ptr<WorldObject>>& AllObjects = Model.GetAllObjects();
-        if (!AllObjects.empty())
-        {
-            const std::shared_ptr<EngineContext> Context = AllObjects[0]->GetContextPtr();
-            if (Context)
-            {
-                return Context->WindowSize;
-            }
-        }
-
-        return sf::Vector2u(0, 0);
+        return Model.GetContext()->WindowSize;
     }
 
     bool LevelDesignerViewModel::IsSelectingRectangle() const

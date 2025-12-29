@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
+#include "imgui-SFML.h"
 
 #include "EngineContext.hpp"
 #include "Engine/EngineLoader.h"
@@ -12,6 +13,7 @@
 #include "Systems/WorldObjectSystem.h"
 #include "Systems/ImGuiSystem.h"
 #include "Systems/CoordinateProjectionSystem.h"
+#include "Systems/ShaderPipeline.h"
 
 namespace Core
 {
@@ -24,6 +26,7 @@ namespace Core
         Context->Window = std::make_shared<sf::RenderWindow>(sf::VideoMode(Context->WindowSize), "Mist Engine");
         Context->Window->requestFocus();
         Context->SystemsRegistry = SystemsRegistry;
+        Context->Renderer = Context->Window.get();
 
         SystemsRegistry->Register<AssetRegistrySystem>(Context);
         SystemsRegistry->Register<ImGuiSystem>(Context);
@@ -32,6 +35,7 @@ namespace Core
         SystemsRegistry->Register<DataAssetRegistrySystem>(Context);
         SystemsRegistry->Register<WorldObjectSystem>(Context);
         SystemsRegistry->Register<CoordinateProjectionSystem>(Context);
+        SystemsRegistry->Register<ShaderPipeline>(Context);
     }
 
     void Engine::Run()
@@ -55,26 +59,55 @@ namespace Core
         Window->clear();
         Window->display();
 
+        sf::RenderTexture SceneTexture(Context->WindowSize);
+        sf::RenderTexture FinalTexture(Context->WindowSize);
+
+        std::shared_ptr<ShaderPipeline> Pipeline = SystemsRegistry->GetCoreSystem<ShaderPipeline>();
+
         while (Window->isOpen())
         {
             float DeltaTimeS = FrameClock.restart().asSeconds();
+
+            AccumulatedTime += DeltaTimeS;
+            FrameCount++;
+
+            if (AccumulatedTime >= 0.5f)
+            {
+                AverageFPS = FrameCount / AccumulatedTime;
+                Window->setTitle("Mist Engine (" + std::to_string(static_cast<int>(AverageFPS)) + " FPS)");
+                AccumulatedTime = 0.0f;
+                FrameCount = 0;
+            }
 
             ForEachSystem([&DeltaTimeS](const std::shared_ptr<CoreSystem>& System)
             {
                 System->Tick(DeltaTimeS);
             });
 
-            Window->clear();
+            Context->Renderer = &SceneTexture;
+            SceneTexture.clear();
 
             ForEachSystem([](const std::shared_ptr<CoreSystem>& System)
             {
                 System->Render();
             });
 
+            SceneTexture.display();
+
+            Pipeline->ApplyAll(SceneTexture, FinalTexture);
+
+            Context->Renderer = Window.get();
+            Context->Renderer->clear();
+            Context->Renderer->setView(Window->getDefaultView());
+            sf::Sprite FinalSprite(FinalTexture.getTexture());
+            Context->Renderer->draw(FinalSprite);
+
             ForEachSystem([](const std::shared_ptr<CoreSystem>& System)
             {
                 System->RenderUI();
             });
+
+            ImGui::SFML::Render(*Window);
 
             Window->display();
 

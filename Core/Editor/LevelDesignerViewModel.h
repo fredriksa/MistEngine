@@ -68,7 +68,7 @@ namespace Core
 
         void RequestExitToMainMenu();
         std::vector<std::shared_ptr<const TileSheet>> GetAllTileSheets() const;
-        sf::RenderWindow& GetWindow() const;
+        sf::RenderTarget& GetRenderer() const;
         sf::Vector2u GetWindowSize() const;
 
         LevelDesignerModel& GetModel() { return Model; }

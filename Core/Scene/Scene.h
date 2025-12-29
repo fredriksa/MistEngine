@@ -18,9 +18,12 @@ namespace Core
     public:
         Scene(std::shared_ptr<EngineContext> Context, std::string Name);
         const std::string& GetName() { return Name; }
+        Core::World& GetWorld() { return World; }
+        const Core::World& GetWorld() const { return World; }
 
         void Tick(float DeltaTimeS) final;
         void Render() final;
+        virtual void RenderUI() {}
 
         Task<> Load();
         void Enter();

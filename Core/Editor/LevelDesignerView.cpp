@@ -4,6 +4,7 @@
 #include "ObjectSelection.h"
 #include "EditorConstants.h"
 #include "ComponentEditorRegistry.h"
+#include "UITheme.h"
 #include "../Components/CameraComponent.h"
 #include "../Components/TileMapComponent.h"
 #include "../Components/TransformComponent.h"
@@ -16,6 +17,7 @@
 #include "../TileMap/TileMap.h"
 #include "../World/World.h"
 #include "../World/WorldObject.h"
+#include "../World/WorldEnvironment.h"
 #include "../World/ComponentManager.h"
 #include "imgui.h"
 #include <SFML/Graphics/Sprite.hpp>
@@ -34,6 +36,7 @@ namespace Core
 
     void LevelDesignerView::RenderMenuBar(std::optional<Task<>>& LoadingTask)
     {
+        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, UITheme::MenuBarBackground);
         if (ImGui::BeginMainMenuBar())
         {
             if (ImGui::BeginMenu("File"))
@@ -74,12 +77,16 @@ namespace Core
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("Tools"))
+            const ImVec2 EnvironmentTextSize = ImGui::CalcTextSize("Environment");
+            const ImVec2 EnvironmentPos = ImGui::GetCursorScreenPos();
+            const float MenuHeight = ImGui::GetFrameHeight();
+
+            ImGui::Selectable("Environment", bShowEnvironmentPanel, ImGuiSelectableFlags_None, ImVec2(EnvironmentTextSize.x, MenuHeight));
+
+            if (ImGui::IsItemClicked())
             {
-                if (ImGui::MenuItem("Delete Tile", "D"))
-                {
-                }
-                ImGui::EndMenu();
+                EnvironmentButtonPos = ImVec2(EnvironmentPos.x, EnvironmentPos.y + MenuHeight);
+                bShowEnvironmentPanel = !bShowEnvironmentPanel;
             }
 
             const float MenuBarHeight = ImGui::GetWindowSize().y;
@@ -92,6 +99,7 @@ namespace Core
 
             ImGui::EndMainMenuBar();
         }
+        ImGui::PopStyleColor();
 
         RenderSaveAsModal();
         RenderOpenSceneModal(LoadingTask);
@@ -201,7 +209,8 @@ namespace Core
                      ImGuiWindowFlags_NoTitleBar |
                      ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus);
+                     ImGuiWindowFlags_NoBringToFrontOnFocus |
+                     ImGuiWindowFlags_NoInputs);
 
         const bool bHasTileMap = ViewModel.GetSelectedTileMap() != nullptr;
 
@@ -217,6 +226,8 @@ namespace Core
 
         ImGui::SameLine();
         RenderPropertiesPanel();
+
+        RenderEnvironmentPanel();
 
         ImGui::End();
     }
@@ -248,7 +259,15 @@ namespace Core
     void LevelDesignerView::RenderTilePalettePanel()
     {
         const float ContentHeight = ImGui::GetContentRegionAvail().y;
+
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, UITheme::PanelBackground);
         ImGui::BeginChild("TilePalette", ImVec2(ViewModel.GetTilePalettePanelWidth(), ContentHeight), true);
+        ImGui::PopStyleColor();
+
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+        {
+            ViewModel.GetModel().SetMouseOverBlockingUI(true);
+        }
 
         ImGui::SeparatorText("Tile Palette");
 
@@ -438,7 +457,7 @@ namespace Core
         CanvasWidth -= ViewModel.GetPropertiesPanelWidth() + 4.0f;
 
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), true);
+        ImGui::BeginChild("Canvas", ImVec2(CanvasWidth, ContentHeight), ImGuiChildFlags_None);
 
         RenderCanvasToolbar();
 
@@ -457,14 +476,22 @@ namespace Core
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
 
         const bool bHasTileMap = ViewModel.GetSelectedTileMap() != nullptr;
+        const bool bHasTileSelection = ViewModel.GetCurrentSelection().IsValid();
         const EditorTool CurrentTool = ViewModel.GetModel().GetCurrentTool();
 
-        if (!bHasTileMap && (CurrentTool == EditorTool::Brush ||
-                             CurrentTool == EditorTool::Fill ||
-                             CurrentTool == EditorTool::Eraser ||
-                             CurrentTool == EditorTool::Eyedropper))
+        const bool bIsTileEditingTool = (CurrentTool == EditorTool::Brush ||
+                                          CurrentTool == EditorTool::Fill ||
+                                          CurrentTool == EditorTool::Eraser ||
+                                          CurrentTool == EditorTool::Eyedropper);
+
+        if (!bHasTileMap && bIsTileEditingTool)
         {
+            ViewModel.GetModel().SetLastTileEditingTool(CurrentTool);
             ViewModel.GetModel().SetCurrentTool(EditorTool::Select);
+        }
+        else if (bHasTileMap && bHasTileSelection && CurrentTool == EditorTool::Select)
+        {
+            ViewModel.GetModel().SetCurrentTool(ViewModel.GetModel().GetLastTileEditingTool());
         }
 
         if (bHasTileMap)
@@ -479,83 +506,83 @@ namespace Core
             ImGui::SameLine();
 
             if (CurrentTool == EditorTool::Brush)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
-        }
-        if (ImGui::Button("Brush"))
-        {
-            ViewModel.GetModel().SetCurrentTool(EditorTool::Brush);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Brush Tool (B)");
-        }
-        if (CurrentTool == EditorTool::Brush)
-        {
-            ImGui::PopStyleColor(3);
-        }
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+            }
+            if (ImGui::Button("Brush"))
+            {
+                ViewModel.GetModel().SetCurrentTool(EditorTool::Brush);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Brush Tool (B)");
+            }
+            if (CurrentTool == EditorTool::Brush)
+            {
+                ImGui::PopStyleColor(3);
+            }
 
-        ImGui::SameLine();
-        if (CurrentTool == EditorTool::Fill)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
-        }
-        if (ImGui::Button("Fill"))
-        {
-            ViewModel.GetModel().SetCurrentTool(EditorTool::Fill);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Fill Tool (F)");
-        }
-        if (CurrentTool == EditorTool::Fill)
-        {
-            ImGui::PopStyleColor(3);
-        }
+            ImGui::SameLine();
+            if (CurrentTool == EditorTool::Fill)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+            }
+            if (ImGui::Button("Fill"))
+            {
+                ViewModel.GetModel().SetCurrentTool(EditorTool::Fill);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Fill Tool (F)");
+            }
+            if (CurrentTool == EditorTool::Fill)
+            {
+                ImGui::PopStyleColor(3);
+            }
 
-        ImGui::SameLine();
-        if (CurrentTool == EditorTool::Eraser)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
-        }
-        if (ImGui::Button("Eraser"))
-        {
-            ViewModel.GetModel().SetCurrentTool(EditorTool::Eraser);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Eraser Tool (D)");
-        }
-        if (CurrentTool == EditorTool::Eraser)
-        {
-            ImGui::PopStyleColor(3);
-        }
+            ImGui::SameLine();
+            if (CurrentTool == EditorTool::Eraser)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+            }
+            if (ImGui::Button("Eraser"))
+            {
+                ViewModel.GetModel().SetCurrentTool(EditorTool::Eraser);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Eraser Tool (D)");
+            }
+            if (CurrentTool == EditorTool::Eraser)
+            {
+                ImGui::PopStyleColor(3);
+            }
 
-        ImGui::SameLine();
-        if (CurrentTool == EditorTool::Eyedropper)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
-        }
-        if (ImGui::Button("Eyedropper"))
-        {
-            ViewModel.GetModel().SetCurrentTool(EditorTool::Eyedropper);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Eyedropper Tool (E)");
-        }
-        if (CurrentTool == EditorTool::Eyedropper)
-        {
-            ImGui::PopStyleColor(3);
-        }
+            ImGui::SameLine();
+            if (CurrentTool == EditorTool::Eyedropper)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.6f, 0.9f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+            }
+            if (ImGui::Button("Eyedropper"))
+            {
+                ViewModel.GetModel().SetCurrentTool(EditorTool::Eyedropper);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Eyedropper Tool (E)");
+            }
+            if (CurrentTool == EditorTool::Eyedropper)
+            {
+                ImGui::PopStyleColor(3);
+            }
         }
 
         ImGui::PopStyleVar(2);
@@ -672,6 +699,11 @@ namespace Core
     {
         const float ContentHeight = ImGui::GetContentRegionAvail().y;
 
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+        {
+            ViewModel.GetModel().SetMouseOverBlockingUI(true);
+        }
+
         ImGui::Button("##Divider", ImVec2(4.0f, ContentHeight));
         if (ImGui::IsItemActive())
         {
@@ -686,7 +718,9 @@ namespace Core
 
         ImGui::SameLine();
 
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, UITheme::PanelBackground);
         ImGui::BeginChild("Properties", ImVec2(ViewModel.GetPropertiesPanelWidth() - 4.0f, ContentHeight), true);
+        ImGui::PopStyleColor();
 
         RenderSceneHierarchy();
 
@@ -950,7 +984,7 @@ namespace Core
             Lines.append(sf::Vertex(sf::Vector2f(Right, YPos), LineColor));
         }
 
-        ViewModel.GetWindow().draw(Lines);
+        ViewModel.GetRenderer().draw(Lines);
     }
 
     void LevelDesignerView::RenderGizmos()
@@ -1095,15 +1129,18 @@ namespace Core
             Gizmos.append(sf::Vertex(sf::Vector2f(YAxisEnd.x + ArrowHeadSize, YAxisEnd.y - ArrowHeadSize), YAxisColor));
         }
 
-        ViewModel.GetWindow().draw(Gizmos);
+        ViewModel.GetRenderer().draw(Gizmos);
 
         if (ViewModel.IsSelectingRectangle())
         {
             const WindowCoordinate SelectStart = ViewModel.GetSelectionRectStart();
             const WindowCoordinate SelectCurrent = ViewModel.GetSelectionRectCurrent();
 
-            const sf::View DefaultView = ViewModel.GetWindow().getDefaultView();
-            ViewModel.GetWindow().setView(DefaultView);
+            const sf::Vector2u RenderSize = ViewModel.GetWindowSize();
+            sf::View DefaultView;
+            DefaultView.setSize(sf::Vector2f(static_cast<float>(RenderSize.x), static_cast<float>(RenderSize.y)));
+            DefaultView.setCenter(sf::Vector2f(static_cast<float>(RenderSize.x) / 2.0f, static_cast<float>(RenderSize.y) / 2.0f));
+            ViewModel.GetRenderer().setView(DefaultView);
 
             const sf::Color OutlineColor(100, 150, 255, 255);
 
@@ -1127,9 +1164,110 @@ namespace Core
             RectOutline.append(sf::Vertex(BottomLeft, OutlineColor));
             RectOutline.append(sf::Vertex(TopLeft, OutlineColor));
 
-            ViewModel.GetWindow().draw(RectOutline);
+            ViewModel.GetRenderer().draw(RectOutline);
 
-            ViewModel.GetWindow().setView(Camera->GetView());
+            ViewModel.GetRenderer().setView(Camera->GetView());
         }
+    }
+
+    void LevelDesignerView::RenderEnvironmentPanel()
+    {
+        if (!bShowEnvironmentPanel)
+        {
+            return;
+        }
+
+        ImGui::SetNextWindowPos(EnvironmentButtonPos, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(350, 0), ImGuiCond_FirstUseEver);
+
+        ImGui::Begin("Environment Panel", &bShowEnvironmentPanel, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+        {
+            ViewModel.GetModel().SetMouseOverBlockingUI(true);
+        }
+
+        WorldEnvironment& Env = ViewModel.GetModel().GetWorld().GetEnvironment();
+        WorldTime& Time = Env.GetTime();
+        DayNightColors& Colors = Env.GetDayNightColors();
+
+        ImGui::SeparatorText("Time");
+
+        int Hours = Time.GetHourOfDay();
+        int Minutes = Time.GetMinutes();
+        bool bStaticTime = Time.IsStaticTime();
+        float TimeScale = Time.GetTimeScale();
+
+        if (ImGui::SliderInt("Hours", &Hours, 0, 23))
+        {
+            Time.SetTime(Hours, Minutes);
+        }
+
+        if (ImGui::SliderInt("Minutes", &Minutes, 0, 59))
+        {
+            Time.SetTime(Hours, Minutes);
+        }
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Settings");
+
+        if (ImGui::Checkbox("Static Time", &bStaticTime))
+        {
+            Time.SetStaticTime(bStaticTime);
+        }
+
+        if (ImGui::SliderFloat("Time Scale", &TimeScale, 0.1f, 10.0f, "%.1fx"))
+        {
+            Time.SetTimeScale(TimeScale);
+        }
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Preview");
+
+        ViewModel.GetModel().UpdateTimePreview();
+
+        float PreviewDuration = ViewModel.GetModel().GetTimePreviewDuration();
+        if (ImGui::SliderFloat("Duration (s)", &PreviewDuration, 1.0f, 60.0f, "%.1f"))
+        {
+            ViewModel.GetModel().SetTimePreviewDuration(PreviewDuration);
+        }
+
+        if (ViewModel.GetModel().IsPreviewingTime())
+        {
+            const float Progress = ViewModel.GetModel().GetTimePreviewProgress();
+            ImGui::ProgressBar(Progress, ImVec2(-1, 0));
+
+            if (ImGui::Button("Stop Preview", ImVec2(-1, 0)))
+            {
+                ViewModel.GetModel().StopTimePreview();
+            }
+        }
+        else
+        {
+            if (ImGui::Button("Preview", ImVec2(-1, 0)))
+            {
+                ViewModel.GetModel().StartTimePreview();
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Colors");
+
+        ImGui::Text("Night (21:00 - 5:00)");
+        ImGui::ColorEdit3("##Night", &Colors.Night.x);
+
+        ImGui::Spacing();
+        ImGui::Text("Sunrise (5:00 - 7:00)");
+        ImGui::ColorEdit3("##Sunrise", &Colors.Sunrise.x);
+
+        ImGui::Spacing();
+        ImGui::Text("Day (7:00 - 17:00)");
+        ImGui::ColorEdit3("##Day", &Colors.Day.x);
+
+        ImGui::Spacing();
+        ImGui::Text("Sunset (17:00 - 19:00)");
+        ImGui::ColorEdit3("##Sunset", &Colors.Sunset.x);
+
+        ImGui::End();
     }
 }

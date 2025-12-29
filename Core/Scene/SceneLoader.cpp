@@ -1,10 +1,12 @@
 #include "SceneLoader.h"
 
 #include <unordered_set>
+#include <fstream>
 
 #include "../EngineContext.hpp"
 #include "../World/World.h"
 #include "../World/WorldObject.h"
+#include "../World/WorldEnvironment.h"
 #include "../Assets/AssetLoader.h"
 #include "../Assets/AssetManifest.h"
 #include "../Assets/DataAsset.h"
@@ -13,6 +15,7 @@
 #include "../Systems/WorldObjectSystem.h"
 #include "../Utils/StringUtils.h"
 #include "../SystemsRegistry.hpp"
+#include "../ThirdParty/json.hpp"
 
 namespace Core
 {
@@ -30,12 +33,32 @@ namespace Core
         Loader = std::make_unique<AssetLoader>(AssetRegistry, DataAssetRegistry);
 
         std::string ManifestPath = "Game/Assets/Scenes/" + ToLowercase(SceneName) + ".json";
-        AssetManifest Manifest = AssetManifest::LoadFromFile(ManifestPath, "Game/Assets/Scenes/");
+
+        nlohmann::json SceneJson;
+        std::ifstream File(ManifestPath);
+        if (File.is_open())
+        {
+            try
+            {
+                SceneJson = nlohmann::json::parse(File);
+            }
+            catch (const nlohmann::json::exception& E)
+            {
+                std::printf("Failed to parse scene %s: %s\n", ManifestPath.c_str(), E.what());
+            }
+        }
+
+        AssetManifest Manifest = AssetManifest::FromJson(SceneJson, "Game/Assets/Scenes/");
 
         QueueAssetsFromManifest(Manifest);
         std::vector<AssetId> LoadedAssets = co_await Loader->LoadAllAsync();
 
         SpawnObjectsIntoWorld(Manifest, TargetWorld);
+
+        if (SceneJson.contains("worldEnvironment"))
+        {
+            TargetWorld.SetEnvironment(WorldEnvironment::FromJson(SceneJson["worldEnvironment"]));
+        }
 
         co_return LoadedAssets;
     }

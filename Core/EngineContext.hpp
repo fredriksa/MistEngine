@@ -11,6 +11,7 @@ namespace Core
 namespace sf
 {
     class RenderWindow;
+    class RenderTarget;
 }
 
 namespace Core
@@ -21,5 +22,6 @@ namespace Core
         sf::Vector2u WindowSize;
         std::shared_ptr<sf::RenderWindow> Window;
         std::shared_ptr<SystemsRegistry> SystemsRegistry;
+        sf::RenderTarget* Renderer = nullptr;
     };
 }

@@ -24,6 +24,8 @@ namespace Core
         void OnKeyPressed(const sf::Event::KeyPressed& Event) override;
 
     private:
+        bool ShouldBlockInput() const;
+
         void PaintTile(WindowCoordinate MousePos);
         void DeleteTile(WindowCoordinate MousePos);
         void EyedropperTile(WindowCoordinate MousePos);

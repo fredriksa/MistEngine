@@ -29,6 +29,10 @@ namespace Core
         std::shared_ptr<SystemsRegistry> SystemsRegistry;
         std::shared_ptr<EngineContext> Context;
         bool bPendingShutdown = false;
+
+        float AccumulatedTime = 0.0f;
+        float AverageFPS = 0.0f;
+        int FrameCount = 0;
     };
 
     template <typename T>

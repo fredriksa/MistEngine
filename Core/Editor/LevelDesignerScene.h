@@ -16,7 +16,7 @@ namespace Core
 
         void OnLoad() override;
         void PreRender() override;
-        void PostRender() override;
+        void RenderUI() override;
 
         bool IsClickInCanvas(WindowCoordinate MousePos) const;
         void ZoomIn();

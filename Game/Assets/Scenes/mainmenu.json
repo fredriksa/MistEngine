@@ -4,11 +4,11 @@
             "components": [
                 {
                     "data": {},
-                    "type": "TransformComponent"
+                    "type": "CameraComponent"
                 },
                 {
                     "data": {},
-                    "type": "CameraComponent"
+                    "type": "TransformComponent"
                 }
             ]
         },
@@ -9856,5 +9856,13 @@
             ],
             "name": "TileMap"
         }
-    ]
+    ],
+    "worldEnvironment": {
+        "staticTime": false,
+        "time": {
+            "hours": 6,
+            "minutes": 0
+        },
+        "timeScale": 1.0
+    }
 }

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <chrono>
 #include "../Async/Task.hpp"
 #include "../Common.h"
 #include "../Coordinates/TypedRect.hpp"
@@ -115,6 +116,9 @@ namespace Core
         void SetCurrentTool(EditorTool Tool) { CurrentTool = Tool; }
         EditorTool GetCurrentTool() const { return CurrentTool; }
 
+        void SetLastTileEditingTool(EditorTool Tool) { LastTileEditingTool = Tool; }
+        EditorTool GetLastTileEditingTool() const { return LastTileEditingTool; }
+
         void SelectObjectAtPosition(struct WorldCoordinate WorldPos, bool bAdditive);
         void SelectObjectsInRectangle(WorldCoordinate TopLeft, WorldCoordinate BottomRight, bool bAdditive);
         void ClearSelection();
@@ -142,6 +146,20 @@ namespace Core
         World& GetWorld() { return WorldRef; }
         const World& GetWorld() const { return WorldRef; }
 
+        std::shared_ptr<EngineContext> GetContext() const { return Context; }
+
+        void SetMouseOverBlockingUI(bool bBlocking) { bMouseOverBlockingUI = bBlocking; }
+        bool IsMouseOverBlockingUI() const { return bMouseOverBlockingUI; }
+
+        void StartTimePreview();
+        void StopTimePreview();
+        void UpdateTimePreview();
+        bool IsPreviewingTime() const { return bIsPreviewingTime; }
+        float GetTimePreviewProgress() const;
+
+        void SetTimePreviewDuration(float Duration) { TimePreviewDuration = Duration; }
+        float GetTimePreviewDuration() const { return TimePreviewDuration; }
+
     private:
         sf::FloatRect GetObjectBounds(const WorldObject* Object) const;
 
@@ -155,6 +173,7 @@ namespace Core
         bool bShowGrid = true;
         ObjectSelection Selection;
         EditorTool CurrentTool = EditorTool::Select;
+        EditorTool LastTileEditingTool = EditorTool::Brush;
         WorldObject* HoveredObject = nullptr;
         bool bIsSelectingRectangle = false;
         WindowCoordinate SelectRectStart{0, 0};
@@ -163,5 +182,12 @@ namespace Core
         DragMode CurrentDragMode = DragMode::None;
         WorldCoordinate DragStartPos;
         std::vector<std::pair<WorldObject*, sf::Vector2f>> DraggedObjectsInitialPositions;
+        bool bMouseOverBlockingUI = false;
+
+        bool bIsPreviewingTime = false;
+        std::chrono::steady_clock::time_point TimePreviewStart;
+        int SavedPreviewHours = 0;
+        int SavedPreviewMinutes = 0;
+        float TimePreviewDuration = 15.0f;
     };
 }

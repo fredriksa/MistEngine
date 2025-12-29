@@ -12,6 +12,8 @@ namespace Core
 
     void World::Tick(float DeltaTimeS)
     {
+        Environment.GetTime().Tick(DeltaTimeS);
+
         ObjectMgr.StartPendingComponents();
 
         for (const std::shared_ptr<WorldObject>& Object : ObjectMgr.GetAll())
@@ -30,6 +32,13 @@ namespace Core
 
     nlohmann::json World::ToJson() const
     {
-        return ObjectMgr.ToJson();
+        nlohmann::json SceneJson = ObjectMgr.ToJson();
+        SceneJson["worldEnvironment"] = Environment.ToJson();
+        return SceneJson;
+    }
+
+    void World::SetEnvironment(const WorldEnvironment& Env)
+    {
+        Environment = Env;
     }
 }

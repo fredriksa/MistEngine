@@ -42,13 +42,17 @@ namespace Game
 
             if (std::shared_ptr<Core::CameraComponent> Camera = Obj->Components().Get<Core::CameraComponent>())
             {
-                Context->Window->setView(Camera->GetView());
+                Context->Renderer->setView(Camera->GetView());
                 break;
             }
         }
     }
 
     void MainMenuScene::PostRender()
+    {
+    }
+
+    void MainMenuScene::RenderUI()
     {
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);

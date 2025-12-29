@@ -51,18 +51,28 @@ namespace Core
         }
     }
 
+    bool LevelEditorController::ShouldBlockInput() const
+    {
+        std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
+        if (!ScenePtr)
+            return true;
+
+        return ScenePtr->GetModel().IsMouseOverBlockingUI() || ImGui::IsAnyItemHovered();
+    }
+
     void LevelEditorController::OnMouseButtonPressed(const sf::Event::MouseButtonPressed& Event)
     {
-        if (ImGui::IsAnyItemHovered())
-        {
-            return;
-        }
-
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
         if (!ScenePtr)
             return;
 
         WindowCoordinate WindowCoords(Event.position.x, Event.position.y);
+
+        if (!ScenePtr->IsClickInCanvas(WindowCoords))
+            return;
+
+        if (ShouldBlockInput())
+            return;
 
         if (Event.button == sf::Mouse::Button::Left)
         {
@@ -93,9 +103,6 @@ namespace Core
                     Core::CoordinateProjectionSystem>();
 
                 if (!CamPtr || !Projector)
-                    return;
-
-                if (!ScenePtr->IsClickInCanvas(WindowCoords))
                     return;
 
                 const bool bCtrlHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ||
@@ -213,7 +220,7 @@ namespace Core
 
         std::shared_ptr<LevelDesignerScene> ScenePtr = Scene.lock();
 
-        if (bIsPainting && ScenePtr)
+        if (bIsPainting && ScenePtr && ScenePtr->IsClickInCanvas(WindowCoords) && !ShouldBlockInput())
         {
             EditorTool CurrentTool = ScenePtr->GetModel().GetCurrentTool();
             if (CurrentTool == EditorTool::Brush)
@@ -288,6 +295,10 @@ namespace Core
 
         if (!ScenePtr->IsClickInCanvas(MousePos))
             return;
+
+        if (ShouldBlockInput())
+            return;
+
         WorldCoordinate WorldPosBeforeZoom = Projector->WindowToWorld(MousePos, CamPtr->GetView());
 
         float CurrentZoom = CamPtr->GetZoom();

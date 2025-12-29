@@ -180,7 +180,7 @@ namespace Core
                     sf::Vector2f TileLocalPos(X * WorldConstants::TileSize, Y * WorldConstants::TileSize);
                     TileSprite.setPosition(TileLocalPos + ObjectPosition);
 
-                    Context.Window->draw(TileSprite);
+                    Context.Renderer->draw(TileSprite);
                 }
             }
         }

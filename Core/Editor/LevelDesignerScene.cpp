@@ -46,7 +46,7 @@ namespace Core
         {
             if (std::shared_ptr<CameraComponent> Camera = CameraObject->Components().Get<CameraComponent>())
             {
-                Context->Window->setView(Camera->GetView());
+                Context->Renderer->setView(Camera->GetView());
 
                 const sf::FloatRect CanvasRect = View.GetCanvasRect();
                 const int ScissorX = static_cast<int>(CanvasRect.position.x);
@@ -61,14 +61,31 @@ namespace Core
         }
     }
 
-    void LevelDesignerScene::PostRender()
+    void LevelDesignerScene::RenderUI()
     {
-        View.DrawSceneGrid();
-        View.RenderGizmos();
+        Model.SetMouseOverBlockingUI(false);
 
-        glDisable(GL_SCISSOR_TEST);
+        if (std::shared_ptr<WorldObject> CameraObject = Model.GetWorld().Objects().GetByName("EditorCamera"))
+        {
+            if (std::shared_ptr<CameraComponent> Camera = CameraObject->Components().Get<CameraComponent>())
+            {
+                Context->Renderer->setView(Camera->GetView());
 
-        Scene::PostRender();
+                const sf::FloatRect CanvasRect = View.GetCanvasRect();
+                const int ScissorX = static_cast<int>(CanvasRect.position.x);
+                const int ScissorY = static_cast<int>(Context->WindowSize.y - CanvasRect.position.y - CanvasRect.size.y);
+                const int ScissorWidth = static_cast<int>(CanvasRect.size.x);
+                const int ScissorHeight = static_cast<int>(CanvasRect.size.y);
+
+                glScissor(ScissorX, ScissorY, ScissorWidth, ScissorHeight);
+
+                View.DrawSceneGrid();
+                View.RenderGizmos();
+
+                glDisable(GL_SCISSOR_TEST);
+                Context->Renderer->setView(Context->Renderer->getDefaultView());
+            }
+        }
 
         View.RenderMenuBar(LoadingTask);
         View.RenderMainContent();

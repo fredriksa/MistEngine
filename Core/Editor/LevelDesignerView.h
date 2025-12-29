@@ -6,6 +6,7 @@
 #include <vector>
 #include <SFML/Graphics/Rect.hpp>
 #include "../Async/Task.hpp"
+#include "imgui.h"
 
 namespace Core
 {
@@ -36,6 +37,7 @@ namespace Core
 
         void RenderSaveAsModal();
         void RenderOpenSceneModal(std::optional<Task<>>& LoadingTask);
+        void RenderEnvironmentPanel();
 
         LevelDesignerViewModel& ViewModel;
 
@@ -54,5 +56,8 @@ namespace Core
         bool bShowAddComponentModal = false;
         int SelectedComponentTypeIndex = 0;
         std::string EditingObjectName;
+
+        bool bShowEnvironmentPanel = false;
+        ImVec2 EnvironmentButtonPos;
     };
 }

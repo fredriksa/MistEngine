@@ -13,6 +13,7 @@ namespace Game
         virtual void OnEnter() override;
         virtual void PreRender() override;
         virtual void PostRender() override;
+        virtual void RenderUI() override;
 
     private:
         void EnterLevelDesigner();

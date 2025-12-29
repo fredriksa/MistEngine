@@ -64,4 +64,12 @@ namespace Core
             ActiveScene->Render();
         }
     }
+
+    void SceneManagerSystem::RenderUI()
+    {
+        if (ActiveScene)
+        {
+            ActiveScene->RenderUI();
+        }
+    }
 }

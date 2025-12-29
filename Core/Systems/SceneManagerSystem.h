@@ -27,6 +27,7 @@ namespace Core
         virtual void Start() override;
         virtual void Tick(float DeltaTimeS) override;
         virtual void Render() override;
+        virtual void RenderUI() override;
 
     private:
         bool Pop();

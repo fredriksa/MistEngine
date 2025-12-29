@@ -28,10 +28,9 @@ namespace Core
     {
         ImGui::SFML::ProcessEvent(*GetContext()->Window, Event);
     }
-    
+
     void ImGuiSystem::RenderUI()
     {
-        ImGui::SFML::Render(*GetContext()->Window);
     }
 
     void ImGuiSystem::Shutdown()
