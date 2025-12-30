@@ -97,6 +97,79 @@ namespace Core
         Model.SetCurrentLayer(Layer);
     }
 
+    EditorTool LevelDesignerViewModel::GetCurrentTool() const
+    {
+        return Model.GetCurrentTool();
+    }
+
+    void LevelDesignerViewModel::SetCurrentTool(EditorTool Tool)
+    {
+        Model.SetCurrentTool(Tool);
+    }
+
+    void LevelDesignerViewModel::ToggleTool(EditorTool Tool)
+    {
+        if (Model.GetCurrentTool() == Tool)
+            Model.SetCurrentTool(EditorTool::Select);
+        else
+            Model.SetCurrentTool(Tool);
+    }
+
+    void LevelDesignerViewModel::NewScene()
+    {
+        Model.NewScene();
+    }
+
+    void LevelDesignerViewModel::SaveScene()
+    {
+        Model.SaveScene();
+    }
+
+    void LevelDesignerViewModel::SaveSceneAs(const std::string& SceneName)
+    {
+        Model.SaveSceneAs(SceneName);
+    }
+
+    Task<void> LevelDesignerViewModel::LoadScene(const std::string& SceneName)
+    {
+        return Model.LoadScene(SceneName);
+    }
+
+    void LevelDesignerViewModel::SetMouseOverBlockingUI(bool bBlocking)
+    {
+        Model.SetMouseOverBlockingUI(bBlocking);
+    }
+
+    void LevelDesignerViewModel::StartTimePreview()
+    {
+        Model.StartTimePreview();
+    }
+
+    void LevelDesignerViewModel::StopTimePreview()
+    {
+        Model.StopTimePreview();
+    }
+
+    void LevelDesignerViewModel::UpdateTimePreview()
+    {
+        Model.UpdateTimePreview();
+    }
+
+    void LevelDesignerViewModel::SetTimePreviewDuration(float Duration)
+    {
+        Model.SetTimePreviewDuration(Duration);
+    }
+
+    World& LevelDesignerViewModel::GetWorld()
+    {
+        return Model.GetWorld();
+    }
+
+    const World& LevelDesignerViewModel::GetWorld() const
+    {
+        return Model.GetWorld();
+    }
+
     std::shared_ptr<WorldObject> LevelDesignerViewModel::CreateNewObject()
     {
         std::shared_ptr<WorldObject> NewObject = Model.CreateObject();

@@ -19,7 +19,13 @@ namespace Core
     class WorldObject;
     class TileMapComponent;
     class TileSheet;
+    class World;
+    class ObjectSelection;
     struct TileSelection;
+    struct EngineContext;
+    class SceneInfo;
+    enum class EditorTool;
+    template<typename T> class Task;
 
     class LevelDesignerViewModel
     {
@@ -40,6 +46,25 @@ namespace Core
 
         uint GetCurrentLayer() const;
         void SetCurrentLayer(uint Layer);
+
+        EditorTool GetCurrentTool() const;
+        void SetCurrentTool(EditorTool Tool);
+        void ToggleTool(EditorTool Tool);
+
+        void NewScene();
+        void SaveScene();
+        void SaveSceneAs(const std::string& SceneName);
+        Task<void> LoadScene(const std::string& SceneName);
+
+        void SetMouseOverBlockingUI(bool bBlocking);
+
+        void StartTimePreview();
+        void StopTimePreview();
+        void UpdateTimePreview();
+        void SetTimePreviewDuration(float Duration);
+
+        World& GetWorld();
+        const World& GetWorld() const;
 
         float GetTilePalettePanelWidth() const { return TilePalettePanelWidth; }
         void SetTilePalettePanelWidth(float Width) { TilePalettePanelWidth = Width; }
@@ -72,7 +97,6 @@ namespace Core
         sf::RenderTarget& GetRenderer() const;
         sf::Vector2u GetWindowSize() const;
 
-        LevelDesignerModel& GetModel() { return Model; }
         const LevelDesignerModel& GetModel() const { return Model; }
 
     private:

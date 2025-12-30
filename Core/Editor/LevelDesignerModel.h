@@ -117,9 +117,6 @@ namespace Core
         void SetCurrentTool(EditorTool Tool) { CurrentTool = Tool; }
         EditorTool GetCurrentTool() const { return CurrentTool; }
 
-        void SetLastTileEditingTool(EditorTool Tool) { LastTileEditingTool = Tool; }
-        EditorTool GetLastTileEditingTool() const { return LastTileEditingTool; }
-
         void SelectObjectAtPosition(struct WorldCoordinate WorldPos, bool bAdditive);
         void SelectObjectsInRectangle(WorldCoordinate TopLeft, WorldCoordinate BottomRight, bool bAdditive);
         void ClearSelection();
@@ -174,7 +171,6 @@ namespace Core
         bool bShowGrid = true;
         ObjectSelection Selection;
         EditorTool CurrentTool = EditorTool::Select;
-        EditorTool LastTileEditingTool = EditorTool::Brush;
         WorldObject* HoveredObject = nullptr;
         bool bIsSelectingRectangle = false;
         WindowCoordinate SelectRectStart{0, 0};

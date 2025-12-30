@@ -44,7 +44,7 @@ namespace Core
             {
                 if (ImGui::MenuItem("New Scene", "Ctrl+N"))
                 {
-                    ViewModel.GetModel().NewScene();
+                    ViewModel.NewScene();
                     ViewModel.SelectObject(nullptr);
                 }
                 if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
@@ -54,7 +54,7 @@ namespace Core
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save", "Ctrl+S"))
                 {
-                    ViewModel.GetModel().SaveScene();
+                    ViewModel.SaveScene();
                 }
                 if (ImGui::MenuItem("Save As..."))
                 {
@@ -105,7 +105,7 @@ namespace Core
 
             if (ImGui::Button("Play", ImVec2(PlayButtonWidth - 10, MenuBarHeight - 4)))
             {
-                ViewModel.GetModel().SaveScene();
+                ViewModel.SaveScene();
 
                 const std::string SceneName = ViewModel.GetModel().GetCurrentScene().GetName();
                 if (!SceneName.empty())
@@ -163,7 +163,7 @@ namespace Core
             {
                 if (strlen(SaveAsSceneNameBuffer) > 0)
                 {
-                    ViewModel.GetModel().SaveSceneAs(SaveAsSceneNameBuffer);
+                    ViewModel.SaveSceneAs(SaveAsSceneNameBuffer);
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -205,7 +205,7 @@ namespace Core
                     SelectedSceneIndex = i;
                     if (ImGui::IsMouseDoubleClicked(0))
                     {
-                        LoadingTask = ViewModel.GetModel().LoadScene(AvailableScenes[SelectedSceneIndex]);
+                        LoadingTask = ViewModel.LoadScene(AvailableScenes[SelectedSceneIndex]);
                         ImGui::CloseCurrentPopup();
                     }
                 }
@@ -218,7 +218,7 @@ namespace Core
             {
                 if (SelectedSceneIndex >= 0 && SelectedSceneIndex < static_cast<int>(AvailableScenes.size()))
                 {
-                    LoadingTask = ViewModel.GetModel().LoadScene(AvailableScenes[SelectedSceneIndex]);
+                    LoadingTask = ViewModel.LoadScene(AvailableScenes[SelectedSceneIndex]);
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -302,7 +302,7 @@ namespace Core
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
         {
-            ViewModel.GetModel().SetMouseOverBlockingUI(true);
+            ViewModel.SetMouseOverBlockingUI(true);
         }
 
         ImGui::SeparatorText("Tile Palette");
@@ -398,7 +398,7 @@ namespace Core
                             DragStartRow = Row;
                             ViewModel.SelectTile(CurrentIndex,
                                                  TileRectCoord(TileCoordinate(Column, Row), TileCoordinate(1, 1)));
-                            ViewModel.GetModel().SetCurrentTool(EditorTool::Brush);
+                            ViewModel.SetCurrentTool(EditorTool::Brush);
                         }
 
                         if (bIsHovered && bIsDraggingTileSelection)
@@ -513,7 +513,7 @@ namespace Core
 
         const bool bHasTileMap = ViewModel.GetSelectedTileMap() != nullptr;
         const bool bHasTileSelection = ViewModel.GetCurrentSelection().IsValid();
-        const EditorTool CurrentTool = ViewModel.GetModel().GetCurrentTool();
+        const EditorTool CurrentTool = ViewModel.GetCurrentTool();
 
         const bool bIsTileEditingTool = (CurrentTool == EditorTool::Brush ||
                                           CurrentTool == EditorTool::Fill ||
@@ -522,12 +522,7 @@ namespace Core
 
         if (!bHasTileMap && bIsTileEditingTool)
         {
-            ViewModel.GetModel().SetLastTileEditingTool(CurrentTool);
-            ViewModel.GetModel().SetCurrentTool(EditorTool::Select);
-        }
-        else if (bHasTileMap && bHasTileSelection && CurrentTool == EditorTool::Select)
-        {
-            ViewModel.GetModel().SetCurrentTool(ViewModel.GetModel().GetLastTileEditingTool());
+            ViewModel.SetCurrentTool(EditorTool::Select);
         }
 
         if (bHasTileMap)
@@ -549,7 +544,7 @@ namespace Core
             }
             if (ImGui::Button("Brush"))
             {
-                ViewModel.GetModel().SetCurrentTool(EditorTool::Brush);
+                ViewModel.ToggleTool(EditorTool::Brush);
             }
             if (ImGui::IsItemHovered())
             {
@@ -569,7 +564,7 @@ namespace Core
             }
             if (ImGui::Button("Fill"))
             {
-                ViewModel.GetModel().SetCurrentTool(EditorTool::Fill);
+                ViewModel.ToggleTool(EditorTool::Fill);
             }
             if (ImGui::IsItemHovered())
             {
@@ -589,7 +584,7 @@ namespace Core
             }
             if (ImGui::Button("Eraser"))
             {
-                ViewModel.GetModel().SetCurrentTool(EditorTool::Eraser);
+                ViewModel.ToggleTool(EditorTool::Eraser);
             }
             if (ImGui::IsItemHovered())
             {
@@ -609,7 +604,7 @@ namespace Core
             }
             if (ImGui::Button("Eyedropper"))
             {
-                ViewModel.GetModel().SetCurrentTool(EditorTool::Eyedropper);
+                ViewModel.ToggleTool(EditorTool::Eyedropper);
             }
             if (ImGui::IsItemHovered())
             {
@@ -737,7 +732,7 @@ namespace Core
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
         {
-            ViewModel.GetModel().SetMouseOverBlockingUI(true);
+            ViewModel.SetMouseOverBlockingUI(true);
         }
 
         ImGui::Button("##Divider", ImVec2(4.0f, ContentHeight));
@@ -975,7 +970,7 @@ namespace Core
         if (!ViewModel.IsGridVisible())
             return;
 
-        const std::shared_ptr<WorldObject> CameraObject = ViewModel.GetModel().GetWorld().Objects().GetByName(
+        const std::shared_ptr<WorldObject> CameraObject = ViewModel.GetWorld().Objects().GetByName(
             "EditorCamera");
         if (!CameraObject)
             return;
@@ -1025,7 +1020,7 @@ namespace Core
 
     void LevelDesignerView::RenderGizmos()
     {
-        const std::shared_ptr<WorldObject> CameraObject = ViewModel.GetModel().GetWorld().Objects().GetByName(
+        const std::shared_ptr<WorldObject> CameraObject = ViewModel.GetWorld().Objects().GetByName(
             "EditorCamera");
         if (!CameraObject)
             return;
@@ -1220,10 +1215,10 @@ namespace Core
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
         {
-            ViewModel.GetModel().SetMouseOverBlockingUI(true);
+            ViewModel.SetMouseOverBlockingUI(true);
         }
 
-        WorldEnvironment& Env = ViewModel.GetModel().GetWorld().GetEnvironment();
+        WorldEnvironment& Env = ViewModel.GetWorld().GetEnvironment();
         WorldTime& Time = Env.GetTime();
         DayNightColors& Colors = Env.GetDayNightColors();
 
@@ -1260,12 +1255,12 @@ namespace Core
         ImGui::Spacing();
         ImGui::SeparatorText("Preview");
 
-        ViewModel.GetModel().UpdateTimePreview();
+        ViewModel.UpdateTimePreview();
 
         float PreviewDuration = ViewModel.GetModel().GetTimePreviewDuration();
         if (ImGui::SliderFloat("Duration (s)", &PreviewDuration, 1.0f, 60.0f, "%.1f"))
         {
-            ViewModel.GetModel().SetTimePreviewDuration(PreviewDuration);
+            ViewModel.SetTimePreviewDuration(PreviewDuration);
         }
 
         if (ViewModel.GetModel().IsPreviewingTime())
@@ -1275,14 +1270,14 @@ namespace Core
 
             if (ImGui::Button("Stop Preview", ImVec2(-1, 0)))
             {
-                ViewModel.GetModel().StopTimePreview();
+                ViewModel.StopTimePreview();
             }
         }
         else
         {
             if (ImGui::Button("Preview", ImVec2(-1, 0)))
             {
-                ViewModel.GetModel().StartTimePreview();
+                ViewModel.StartTimePreview();
             }
         }
 
